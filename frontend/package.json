@@ -1,0 +1,11 @@
+{
+  "dependencies": {
+    "@tailwindcss/vite": "^4.3.0",
+    "tailwindcss": "^4.3.0"
+  },
+  "scripts": {
+    "dev": "npm --prefix AcadexFrontend run dev",
+    "build": "npm --prefix AcadexFrontend run build",
+    "preview": "npm --prefix AcadexFrontend run preview"
+  }
+}
