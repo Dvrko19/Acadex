@@ -15,7 +15,7 @@ app.use((req, res, next) => {
 app.use(express.static(path.join(__dirname, 'frontend', 'AcadexFrontend', 'public')))
 
 // settings
-app.set('port', 4000);
+app.set('port', process.env.PORT);
 // routes
 app.get('/', (req, res)=>{
     res.sendFile(path.join(__dirname, '..', "frontend", "AcadexFrontend", 'public', "index.html"));
