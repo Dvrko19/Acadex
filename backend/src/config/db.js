@@ -12,6 +12,7 @@ const mysql = require("mysql2");
     queueLimit: 0
  });
 
+
 //Verificar la connection funciona
 pool.getConnection((error, connection) => {
     if(error){
