@@ -10,31 +10,31 @@ const getTaskById = async (id)=>{
 }
 const getTask = async () =>{
     const[rows] = await db.query(
-        "SELECT * FROM tareas"
+        "SELECT * FROM tasks"
     )
     return rows;
 }
-const createTask = async ({id_curso, title, description, dateE}) =>{
+const createTask = async ({courseId, title, description, dueDate}) =>{
     
     const[result] = await db.query(
-        "INSERT INTO tasks (curso_id, titulo, descripcion, fecha_entrega) VALUES (?, ?, ?, ?)",
-        [id_curso, title, description, dateE]
+        "INSERT INTO tasks (curso_id, title, descripcion, dueDate) VALUES (?, ?, ?, ?)",
+        [courseId, title, description, dueDate]
     )
     return {
         id: result.insertId,
-        id_curso,
+        courseId,
         title,
         description,
-        dateE
+        dueDate
     }
 }
-const updateTask = async (id,{id_curso, title, description, dateE}) =>{
+const updateTask = async (id,{courseId, title, description, dueDate}) =>{
     const[result] = await db.query(
         `UPDATE tasks
-         set curso_id = ?, titulo = ?, descripcion = ?, fecha_entrega = ?
-         WHERE id = ?
+        set curso_id = ?, title = ?, descripcion = ?, dueDate = ?
+        WHERE id = ?
         `,
-        [id_curso, title, description, dateE, id]
+        [courseId, title, description, dueDate, id]
     )
     return result;
 }
@@ -46,9 +46,10 @@ const deleteTask = async (id) =>{
     return result;
 }
 
-const getTaskByCourse = async ({id_curso}) =>{
+const getTaskByCourse = async ({courseId}) =>{
     const[rows] = await db.query(
-        "SELECT * FROM tasks WHERE curso_id"
+        "SELECT * FROM tasks WHERE courseId = ?",
+        [courseId]
     );
     return rows;
 }
@@ -58,7 +59,7 @@ const getTasksPending = async () =>{
         `
         SELECT *
         FROM tasks
-        WHERE fecha_entrega >= CURDATE()
+        WHERE dueDate >= CURDATE()
         `
     )
     return rows;
@@ -68,7 +69,7 @@ const getExpiredTasks = async() =>{
         `
         SELECT *
         FROM tasks
-        WHERE fecha_entrega < CURDATE()
+        WHERE dueDate < CURDATE()
         `
     )
     return rows;
@@ -82,7 +83,7 @@ const taskExist = async (id) =>{
 }
 const findTaskByTitle = async ({title}) =>{
     const[rows] = await db.query(
-        "SELECT * FROM tasks WHERE titulo like ?",
+        "SELECT * FROM tasks WHERE title like ?",
         [`%${title}%`]
     )
     return rows;
