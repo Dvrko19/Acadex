@@ -76,12 +76,7 @@ La arquitectura fue seleccionada para mantener una separación clara entre respo
 
 El flujo general es:
 
-```
 <img width="342" height="544" alt="image" src="https://github.com/user-attachments/assets/5f6e9061-9dc2-4661-9633-8e3d4801cf95" />
-
-
-
-```
 
 ---
 
