@@ -30,3 +30,26 @@ console.log(`Aplicacion corriendo en el puerto ${app.get('port')}`)
 })
 
 
+
+
+//-----------------Routes------------------
+//import routes
+app.use("/api/auth", require("./routes/auth.routes"));
+
+app.use("/api/users", require("./routes/users.routes"));
+
+app.use("/api/cursos", require("./routes/cursos.routes"));
+
+app.use("/api/tareas", require("./routes/tareas.routes"));
+
+app.use("/api/entregas", require("./routes/entregas.routes"));
+
+app.use("/api/eventos", require("./routes/eventos.routes"));
+
+app.use(
+    "/api/notificaciones",
+    require("./routes/notificaciones.routes")
+);
+
+
+//------------------------------------------------------------------------
