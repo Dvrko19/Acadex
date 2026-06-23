@@ -1,16 +1,16 @@
 const db = require("../config/db")
 
-const createEvent = async ({tipo_evento, usuario_id, datos, fechas}) =>{
+const createEvent = async ({eventType, userId, data, createAt}) =>{
     const [result] = await db.query(
-        "INSERT INTO events (tipo_evento, usuario_id, datos, fecha) VALUES (?, ?, ?, ?)",
-        [tipo_evento, usuario_id, datos, fechas]
+        "INSERT INTO events (eventType, userId, data, createAt) VALUES (?, ?, ?, ?)",
+        [eventType, userId, data, createAt]
     )
     return{
         id: result.insertId,
-        tipo_evento,
-        usuario_id,
-        datos,
-        fechas
+        eventType,
+        userId,
+        data,
+        createAt
     }
 }
 const getEvents = async()=>{
@@ -26,17 +26,17 @@ const findEventById = async (id)=>{
     )
     return rows[0]
 }
-const findEventByType = async (tipo) => {
+const findEventByType = async (eventType) => {
     const[rows] = await db.query (
-        "SELECT * FROM events WHERE tipo_evento = ?",
-        [tipo]
+        "SELECT * FROM events WHERE eventType = ?",
+        [eventType]
     )
     return rows
 }
-const findEventByUser = async (usuario_id) => {
-     const[rows] = await db.query (
-        "SELECT * FROM events WHERE usuario_id = ?",
-        [usuario_id]
+const findEventByUser = async (userId) => {
+    const[rows] = await db.query (
+        "SELECT * FROM events WHERE userId = ?",
+        [userId]
     )
     return rows;
 }

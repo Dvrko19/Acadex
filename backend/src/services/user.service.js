@@ -4,7 +4,7 @@ const bcrypt = require('bcrypt');
 //Para seleccionar todos los datos
 const findAll = () =>{
     const [rows] = await db.query(
-        "SELECT id, nombre, email, rol FROM usuarios"
+        "SELECT id, name, email, role FROM users"
 
     );
     return rows
@@ -28,18 +28,18 @@ const findById = async (id) =>{
     return rows[0];
 }
 //Funcion para crear un usuario
-const createUser = async ({name, email, rol, password}) =>{
+const createUser = async ({name, email, role, password}) =>{
     const passwordHash = await bcrypt.hash(password, 12);
     const[result] = await db.query(
-        "INSERT INTO users (nombre, email, rol, password) VALUES (?, ?, ?, ?)",
-        [name, email, rol, passwordHash]
+        "INSERT INTO users (name, email, role, password) VALUES (?, ?, ?, ?)",
+        [name, email, role, passwordHash]
     );
 
     return {
         id: result.insertId,
         name, 
         email,
-        rol
+        role
     };
 };
 //Funcion para eliminar el usuario mediante el ID
@@ -53,10 +53,10 @@ const deleteUser = async (id) =>{
 //Para actualizar los datos del usuario
 const updateUser = async ({name, email, password}, id) =>{
     const [result] = await db.query(
-       `
-       UPDATE users
-       Set nombre = ?, email = ?, password = ?
-       where id = ?
+    `
+    UPDATE users
+    Set name = ?, email = ?, password = ?
+    where id = ?
         `,
         [name, email, password, id]
     )
