@@ -97,36 +97,8 @@ Esto evita mezclar lógica y facilita realizar cambios futuros.
 
 # Estructura del proyecto
 
-```
-Acadex/
+<img width="179" height="335" alt="image" src="https://github.com/user-attachments/assets/f04eb43b-956f-41ff-8cef-ec6590a3e163" />
 
-│
-├── backend/
-│
-│   ├── src/
-│   │
-│   ├── config/
-│   │   └── db.js
-│   │
-│   ├── controllers/
-│   │
-│   ├── routes/
-│   │
-│   ├── services/
-│   │
-│   ├── events/
-│   │
-│   └── listeners/
-│
-│
-├── frontend/
-│
-│   └── AcadexFrontend/
-│
-├── Dockerfile
-├── docker-compose.yml
-└── README.md
-```
 
 ---
 
