@@ -1,8 +1,8 @@
-const tareaService = require("../services/tarea.service");
+const taskService = require("../services/tarea.service");
 
 const getTasks = async (req, res) => {
     try {
-        const tasks = await tareaService.getTask();
+        const tasks = await taskService.getTask();
 
         return res.status(200).json({
             success: true,
@@ -21,7 +21,7 @@ const getTaskById = async (req, res) => {
     try {
         const { id } = req.params;
 
-        const task = await tareaService.getTaskById(id);
+        const task = await taskService.getTaskById(id);
 
         if (!task) {
             return res.status(404).json({
@@ -59,8 +59,8 @@ const createTask = async (req, res) => {
             });
         }
 
-        const task = await tareaService.createTask({
-            id_curso,
+        const task = await taskService.createTask({
+            courseId,
             title,
             description,
             dateE
@@ -84,13 +84,13 @@ const updateTask = async (req, res) => {
         const { id } = req.params;
 
         const {
-            id_curso,
+            courseId,
             title,
             description,
             dateE
         } = req.body;
 
-        const taskExists = await tareaService.taskExist(id);
+        const taskExists = await taskService.taskExist(id);
 
         if (!taskExists) {
             return res.status(404).json({
@@ -99,8 +99,8 @@ const updateTask = async (req, res) => {
             });
         }
 
-        const result = await tareaService.updateTask(id, {
-            id_curso,
+        const result = await taskService.updateTask(id, {
+            courseId,
             title,
             description,
             dateE
@@ -123,7 +123,7 @@ const deleteTask = async (req, res) => {
     try {
         const { id } = req.params;
 
-        const result = await tareaService.deleteTask(id);
+        const result = await taskService.deleteTask(id);
 
         if (result.affectedRows === 0) {
             return res.status(404).json({
@@ -149,7 +149,7 @@ const getTasksByCourse = async (req, res) => {
     try {
         const { courseId } = req.params;
 
-        const tasks = await tareaService.getTaskByCourse(courseId);
+        const tasks = await taskService.getTaskByCourse(courseId);
 
         return res.status(200).json({
             success: true,
@@ -166,7 +166,7 @@ const getTasksByCourse = async (req, res) => {
 
 const getPendingTasks = async (req, res) => {
     try {
-        const tasks = await tareaService.getTasksPending();
+        const tasks = await taskService.getTasksPending();
 
         return res.status(200).json({
             success: true,
@@ -183,7 +183,7 @@ const getPendingTasks = async (req, res) => {
 
 const getExpiredTasks = async (req, res) => {
     try {
-        const tasks = await tareaService.getExpiredTasks();
+        const tasks = await taskService.getExpiredTasks();
 
         return res.status(200).json({
             success: true,
@@ -209,7 +209,7 @@ const searchTasksByTitle = async (req, res) => {
             });
         }
 
-        const tasks = await tareaService.findTaskByTitle(title);
+        const tasks = await taskService.findTaskByTitle(title);
 
         return res.status(200).json({
             success: true,
@@ -226,7 +226,7 @@ const searchTasksByTitle = async (req, res) => {
 
 const countTasks = async (req, res) => {
     try {
-        const result = await tareaService.countTasks();
+        const result = await taskService.countTasks();
 
         return res.status(200).json({
             success: true,

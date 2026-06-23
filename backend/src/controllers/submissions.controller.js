@@ -1,8 +1,8 @@
-const entregaService = require('../services/entregas.service');
+const SubmissionService = require('../services/entregas.service');
 
 const getSubmissions = async(req, res) => {
     try {
-        const submissions = await entregaService.getSubmission();
+        const submissions = await SubmissionService.getSubmission();
 
         return res.status(200).json({
             success: true,
@@ -21,7 +21,7 @@ const getSubmissionsByTasks = async(req, res) => {
     try {
         const {taskId} = req.params;
 
-        const submissions = await entregaService.getSubmissionByTasks(taskId);
+        const submissions = await SubmissionService.getSubmissionByTasks(taskId);
 
         return res.status(200).json({
             success: true,
@@ -40,7 +40,7 @@ const getSubmissionsByStudents = async(req, res) => {
     try {
         const {studentId} = req.params;
 
-        const submissions = await entregaService.getSubmissionByStudents(studentId);
+        const submissions = await SubmissionService.getSubmissionByStudents(studentId);
 
         return res.status(200).json({
             success: true,
@@ -57,9 +57,9 @@ const getSubmissionsByStudents = async(req, res) => {
 
 const createSubmission = async(req, res) => {
     try {
-        const {tareaId, studentId, archivoUrl} = req.body;
+        const {taskId, studentId, fileUrl} = req.body;
 
-        if (!tareaId || !studentId || !archivoUrl) {
+        if (!taskId || !studentId || !fileUrl) {
             return res.status(400).json({
                 success: false,
                 message: "tareaId, estudianteId y archivoUrl son obligatorios",
@@ -67,10 +67,10 @@ const createSubmission = async(req, res) => {
             });
         }
 
-        const submission = await entregaService.createSubmission({
-            tareaId,
+        const submission = await SubmissionService.createSubmission({
+            taskId,
             studentId,
-            archivUrl
+            fileUrl
         });
 
         return res.status(201).json({
@@ -89,16 +89,16 @@ const createSubmission = async(req, res) => {
 const updateSubmission = async(req, res) => {
     try {
         const {id} = req.params;
-        const {archivoUrl} = req.body;
+        const {fileUrl} = req.body;
 
-        if(!archivoUrl){
+        if(!fileUrl){
             return res.status(400).json({
                 success: false,
                 message: "archivoUrl es obligatorio"
             });
         }
 
-        const result = await entregaService.updateSubmission(id, {archivUrl});
+        const result = await SubmissionService.updateSubmission(id, {fileUrl});
 
         if(result.affectedRows === 0) {
             return res.status(404).json({
@@ -123,7 +123,7 @@ const deleteSubmission = async(req, res) => {
     try {
         const {id} = req.params;
 
-        const result = await entregaService.deleteSubmission(id);
+        const result = await SubmissionService.deleteSubmission(id);
 
         if(result.affectedRows === 0){
             return res.status(404).json({
@@ -142,4 +142,14 @@ const deleteSubmission = async(req, res) => {
             message: error.message
         })
     }
+}
+
+module.exports = {
+    getSubmissions,
+    getSubmissionsByTasks,
+    getSubmissionsByStudents,
+    createSubmission,
+    updateSubmission,
+    deleteSubmission
+
 }
