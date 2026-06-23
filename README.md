@@ -540,6 +540,6 @@ Proyecto desarrollado con fines educativos.
 
 # Autor
 
-Wander Castillo
-Ramshley Polanco
+Wander Castillo/n
+Ramshley Polanco/n
 Derik Manuel Infante
