@@ -5,6 +5,14 @@ const app = express();
 const path = require('path')
 const pool = require('./src/config/db');
 
+const authRoutes = require("./src/routes/auth.routes");
+const userRoutes = require("./src/routes/users.routes");
+const courseRoutes = require("./src/routes/courses.routes");
+const taskRoutes =  require("./src/routes/task.routes");
+const submissionRoutes = require("./src/routes/submission.routes");
+const eventRoutes = require("./src/routes/events.routes");
+const notificationRoutes = require("./src/routes/notifications.routes")
+
 //Middlewares
 app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', 'http://localhost:5173');
@@ -33,23 +41,13 @@ console.log(`Aplicacion corriendo en el puerto ${app.get('port')}`)
 
 
 //-----------------Routes------------------
-//import routes
-app.use("/api/auth", require("./routes/auth.routes"));
-
-app.use("/api/users", require("./routes/users.routes"));
-
-app.use("/api/cursos", require("./routes/cursos.routes"));
-
-app.use("/api/tareas", require("./routes/tareas.routes"));
-
-app.use("/api/entregas", require("./routes/entregas.routes"));
-
-app.use("/api/eventos", require("./routes/eventos.routes"));
-
-app.use(
-    "/api/notificaciones",
-    require("./routes/notificaciones.routes")
-);
+app.use("/api/auth", authRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/courses", courseRoutes);
+app.use("/api/tasks", taskRoutes);
+app.use("/api/submissions", submissionRoutes);
+app.use("/api/events", eventRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 
 //------------------------------------------------------------------------
