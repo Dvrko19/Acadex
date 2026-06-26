@@ -3,7 +3,7 @@ const bcrypt = require('bcrypt');
 
 
 //Funcion para loguear al usuario
-const login = async (email, password) =>{
+const login = async ({email, password}) =>{
     const userExist = await user.findByEmail(email);
 
     if(!userExist){

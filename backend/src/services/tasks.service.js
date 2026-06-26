@@ -17,7 +17,7 @@ const getTask = async () =>{
 const createTask = async ({courseId, title, description, dueDate}) =>{
     
     const[result] = await db.query(
-        "INSERT INTO tasks (curso_id, title, descripcion, dueDate) VALUES (?, ?, ?, ?)",
+        "INSERT INTO tasks (courseId, title, description, dueDate) VALUES (?, ?, ?, ?)",
         [courseId, title, description, dueDate]
     )
     return {
@@ -31,11 +31,11 @@ const createTask = async ({courseId, title, description, dueDate}) =>{
 const updateTask = async (id,{courseId, title, description, dueDate}) =>{
     const[result] = await db.query(
         `UPDATE tasks
-        set curso_id = ?, title = ?, descripcion = ?, dueDate = ?
+        set courseId = ?, title = ?, description = ?, dueDate = ?
         WHERE id = ?
         `,
         [courseId, title, description, dueDate, id]
-    )
+    )//Unos de los campos (courseId) no estaba escrito correctamente (curso_id).
     return result;
 }
 const deleteTask = async (id) =>{
