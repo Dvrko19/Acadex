@@ -121,7 +121,7 @@ const getCoursesByStudent = async (studentId) => {
 
     return rows;
 };
-const removeStudentFromCourse = async (courseId, studentId) => {
+const removeStudentFromCourse = async ({courseId, studentId}) => {
     const [result] = await db.query(
         `
         DELETE FROM courseStudents

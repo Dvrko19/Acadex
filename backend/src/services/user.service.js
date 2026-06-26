@@ -2,11 +2,11 @@ const db = require('../config/db');
 const bcrypt = require('bcrypt');
 
 //Para seleccionar todos los datos
-const findAll = () =>{
+const findAll = async () =>{
     const [rows] = await db.query(
         "SELECT id, name, email, role FROM users"
 
-    );
+    );//El error era que esta no estaba como una funcion asincrona, pero usaba un await. El error solucionado
     return rows
 }
 //Funcion para encontrar el usuario mediante email.
