@@ -1,8 +1,7 @@
 const express = require("express");
 const router = express.Router();
 
-const taskController =
-require("../controllers/task.controller");
+const taskController =require("../controllers/tasks.controller");
 
 
 router.get("/pending", taskController.getPendingTasks);

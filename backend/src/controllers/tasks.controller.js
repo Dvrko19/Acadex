@@ -1,4 +1,4 @@
-const taskService = require("../services/tarea.service");
+const taskService = require("../services/tasks.service");
 
 const getTasks = async (req, res) => {
     try {

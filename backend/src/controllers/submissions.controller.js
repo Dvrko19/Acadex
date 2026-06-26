@@ -1,4 +1,4 @@
-const SubmissionService = require('../services/entregas.service');
+const SubmissionService = require('../services/submissions.service');
 
 const getSubmissions = async(req, res) => {
     try {

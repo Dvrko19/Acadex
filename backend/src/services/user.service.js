@@ -1,5 +1,5 @@
 const db = require('../config/db');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcrypt/promises');
 
 //Para seleccionar todos los datos
 const findAll = async () =>{
@@ -10,13 +10,13 @@ const findAll = async () =>{
     return rows
 }
 //Funcion para encontrar el usuario mediante email.
-const findByEmail = async ({email}) =>{
+const findByEmail = async (email) =>{
     const[rows] = await db.query(
-        " SELECT * FROM users WHERE email = ?",
+        "SELECT * FROM users WHERE email = ?",
         [email]
     );
 
-    return rows[0]
+    return rows[0];
 };
 //Funcion para encontrar el usuario mediante ID
 const findById = async (id) =>{

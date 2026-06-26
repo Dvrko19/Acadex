@@ -1,24 +1,29 @@
 const user = require("../services/user.service");
-const bcrypt = require('bcrypt');
-
+const bcrypt = require("bcrypt");
 
 //Funcion para loguear al usuario
-const login = async ({email, password}) =>{
-    const userExist = await user.findByEmail(email);
+const login = async ({ email, password }) => {
 
-    if(!userExist){
-        throw new Error("Usuario o Contraseña incorrecto")
-    }
+  const userExist = await user.findByEmail(email);
 
-    const isPasswordValid = await bcrypt.compare(password, user.password); //Esto compara la contraseña ingresada con la que esta en la base de dato.
+  if (!userExist) {
+    throw new Error("Usuario o Contraseña incorrecto");
+  }
 
-    if(!isPasswordValid){
-        throw new Error("Usuario o Contraseña incorrecto");
-    }
+  const isPasswordValid = await bcrypt.compare(password, userExist.password); //Esto compara la contraseña ingresada con la que esta en la base de dato.
 
-    return userExist;
-}
+  if (!isPasswordValid) {
+    throw new Error("Usuario o Contraseña incorrecto");
+  }
+
+  return {
+    id: userExist.id,
+    name: userExist.name,
+    email: userExist.email,
+    role: userExist.role,
+  };
+};
 
 module.exports = {
-    login
-}
+  login,
+};

@@ -7,16 +7,16 @@ require("../controllers/user.controller");
 
 // del service
 
-router.get(
-    "/",
-    userController.getUsers
-);
+// router.get(
+//     "/",
+//     userController.getUsers
+// );
 
 
-router.get(
-    "/:id",
-    userController.getUserById
-);
+// router.get(
+//     "/:id",
+//     userController.getUserById
+// );
 
 
 // CRUD
