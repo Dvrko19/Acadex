@@ -36,16 +36,16 @@ const createUser = async ({name, email, role, password}) =>{
         [name, email, role, passwordHash]
     );
 
-    const user = {
+    const createdUser = {
         id: result.insertId,
         name, 
         email,
         role
     };
 
-    eventBus.emit("user.created", user);
+    eventBus.emit("user.created", createdUser);
 
-    return user
+    return createdUser
 };
 //Funcion para eliminar el usuario mediante el ID
 const deleteUser = async (id) =>{

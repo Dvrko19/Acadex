@@ -104,7 +104,7 @@ const enrollStudentInCourse = async ({courseId, studentId}) =>{
         courseId,
         studentId
     }
-    eventBus("course.enroll", enrollement)
+    eventBus.emit("course.enroll", enrollement)
 
     return enrollement;
 }
