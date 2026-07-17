@@ -1,5 +1,6 @@
 const tarea = require('./tasks.service');
 const db = require('../config/db');
+const eventBus = require('../events/eventBus');
 
 const findSubmissionById =  async (id) =>{
     const[rows] = await db.query(
@@ -64,13 +65,17 @@ const createSubmission = async({taskId, studentId, fileUrl}) =>{
         `,
         [taskId, studentId, fileUrl, status]
     )
-    return {
+    const createdSubmission = {
         id: result.insertId,
         taskId,
         studentId,
         fileUrl,
         status
     }
+    eventBus.emit("Submissions.created", createdSubmission);
+
+    return createdSubmission
+
 }
 const updateSubmission = async(id, {fileUrl}) =>{
     const [result] = await db.query(
@@ -80,7 +85,11 @@ const updateSubmission = async(id, {fileUrl}) =>{
         `,
         [fileUrl, id]
     )
-    return result;
+    const updatedSubmission = {
+        id,
+        fileUrl
+    }
+    return updatedSubmission;
 }
 const deleteSubmission = async(id) =>{
     const[result] = await db.query(
@@ -88,7 +97,11 @@ const deleteSubmission = async(id) =>{
         [id]
 
     )
-    return result;
+    const deletedSubmission = {
+        id
+    }
+    eventBus.emit("Submissions.deleted", deletedSubmission)
+    return deletedSubmission;
 }
 
 module.exports ={

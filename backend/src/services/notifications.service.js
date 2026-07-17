@@ -1,16 +1,19 @@
 const db = require("../config/db");
+const eventBus = require("../events/eventBus");
 
 const createNotification = async ({userId, message})=>{
     const[result] = await db.query(
         "INSERT INTO notifications (userId, message) VALUES (?, ?)",
         [userId, message]
     )
-    return {
+    const createdNotification = {
         id: result.insertId,
         userId,
         message,
         isRead: false
     }
+    eventBus.emit("Notification.created", createdNotification)
+    return createdNotification
 }
 const getNotification = async () => {
     const[rows] = await db.query (
@@ -48,7 +51,14 @@ const deleteNotification = async (id) => {
         "DELETE FROM notifications WHERE id = ?",
         [id]
     )
-    return result;
+    if(result.affectedRows === 0){
+        throw new Error("Notificacion no encontrada")
+    }
+    const deletedNotification = {
+        id
+    }
+    eventBus.emit("notification.deleted", deletedNotification);
+    return deletedNotification;
 }
 module.exports = {
     createNotification,

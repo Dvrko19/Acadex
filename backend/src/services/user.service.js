@@ -1,5 +1,6 @@
 const db = require('../config/db');
-const bcrypt = require('bcrypt/promises');
+const bcrypt = require('bcrypt');
+const eventBus = require('../events/eventBus');
 
 //Para seleccionar todos los datos
 const findAll = async () =>{
@@ -35,12 +36,16 @@ const createUser = async ({name, email, role, password}) =>{
         [name, email, role, passwordHash]
     );
 
-    return {
+    const user = {
         id: result.insertId,
         name, 
         email,
         role
     };
+
+    eventBus.emit("user.created", user);
+
+    return user
 };
 //Funcion para eliminar el usuario mediante el ID
 const deleteUser = async (id) =>{
@@ -48,7 +53,14 @@ const deleteUser = async (id) =>{
         "DELETE FROM users WHERE id = ?",
         [id]
     );
-    return result;
+    if(result.affectedRows == 0){
+        throw new Error("Usuario no encontrado")
+    }
+    const deletedUser = {
+        id
+    }
+    eventBus.emit("user.deleted", deleteUser)
+    return deleteUser;
 }
 //Para actualizar los datos del usuario
 const updateUser = async ({name, email, password}, id) =>{
@@ -60,7 +72,14 @@ const updateUser = async ({name, email, password}, id) =>{
         `,
         [name, email, password, id]
     )
-    return result;
+
+    const updated = {
+        id,
+        name,
+        email
+    }
+    eventBus.emit("user.updated", updated);
+    return updated;
 }
 
 
