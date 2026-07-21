@@ -1,5 +1,6 @@
-const eventBus = requiered("..events/eventBus");
+const eventBus = require("../events/eventBus");
 const notificationsServices = require("../services/notifications.service");
+
 
 
 //listener para el evento de usuario creado
@@ -8,7 +9,7 @@ eventBus.on("user.created", async (createdUser) =>{
     try{
         const notifications = 
             await notificationsServices.createNotification({
-                usertId: createdUser.id,
+                userId: createdUser.id,
                 message: `Bienvenido ${createdUser.name}, tu usuario fue creado correctamente`
             });
 

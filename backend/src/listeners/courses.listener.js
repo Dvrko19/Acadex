@@ -1,11 +1,11 @@
 const eventBus = require("../events/eventBus");
-const notificationService = require("../services/notification.service");
+const notificationService = require("../services/notifications.service");
 
 
 
 //listener para el evento de curso creado
 eventBus.on("course.created", async (createdCourse) => {
-        await notificationService.createdCourse({
+        await notificationService.createNotification({
             userId: createdCourse.teacherId,
             message: `Se te asigno un nuevo curso: ${createdCourse.name},. `
         });
@@ -23,7 +23,7 @@ eventBus.on("course.deleted", async (deletedCourse) => {
 
 //listener para el evento de curso actualizado
 eventBus.on("course.updated", async (updatedCourses) => {
-        await notificationService.updatedCourses({
+        await notificationService.createNotification({
             userId: updatedCourses.teacherId,
             message: `Se te actualizo el curso: ${updatedCourses.name},. `
         });
@@ -48,9 +48,9 @@ eventBus.on("course.enroll", async (enrollment) => {
 
 
 //listener para el evento de estudiante desinscrito de un curso
-eventBus.on("removedStudentFromCourse", async (removedStudent) => {
+eventBus.on("course.removedStudentFromCourse", async (removedStudent) => {
     try {
-    await notificationService.removedStudent({
+    await notificationService.createdCourse({
         userId: removedStudent.studentId,
         message: `Has sido eliminado del curso.`
     });

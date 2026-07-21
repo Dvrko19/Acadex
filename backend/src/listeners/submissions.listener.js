@@ -1,10 +1,10 @@
 const eventBus = require("../events/eventBus");
-const notificationService = require("../services/notification.service");
-const courseService = require("../services/course.service");
+const notificationService = require("../services/notifications.service");
+const courseService = require("../services/courses.service");
 
 
 //listener para el evento de entrega de tarea creada
-eventBus.on("Submissions.created", createdSubmission => {
+eventBus.on("Submissions.created", async (createdSubmission) => {
     try{
         const students = await courseServices.getStudentsByCourses(
             createdSubmission.courseId
@@ -31,7 +31,6 @@ eventBus.on("Submissions.created", createdSubmission => {
 
 
 //listener para el evento de entrega de tarea actualizada
-const eventBus = require("../events/eventBus");
 
 eventBus.on("submission.updated", async (updatedSubmission) => {
     try {

@@ -13,6 +13,11 @@ const submissionRoutes = require("./src/routes/submission.routes");
 const eventRoutes = require("./src/routes/events.routes");
 const notificationRoutes = require("./src/routes/notifications.routes")
 
+//Registro de los listeners
+require("./src/listeners/user.listener.js");
+require("./src/listeners/task.listener.js");
+require("./src/listeners/courses.listener.js");
+require("./src/listeners/submissions.listener.js");
 //Middlewares
 app.use(express.json());
 

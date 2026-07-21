@@ -1,6 +1,6 @@
-const eventBus = requiered("..events/eventBus");
+const eventBus = require("../events/eventBus");
 const notificationsServices = require("../services/notifications.service");
-const courseService = require("../services/course.service");
+const courseService = require("../services/courses.service");
 
 //listener para el evento de usuario creado 
 eventBus.on("task.created", async (createdTask) => {
