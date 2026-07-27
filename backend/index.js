@@ -1,55 +1,38 @@
+// Imports
 require('dotenv').config();
 
 const express = require('express');
 const app = express();
-const path = require('path')
-const pool = require('./src/config/db');
+const cors = require('cors');
+const apiRoutes = require('./src/routes');
 
-const authRoutes = require("./src/routes/auth.routes");
-const userRoutes = require("./src/routes/users.routes");
-const courseRoutes = require("./src/routes/courses.routes");
-const taskRoutes =  require("./src/routes/task.routes");
-const submissionRoutes = require("./src/routes/submission.routes");
-const eventRoutes = require("./src/routes/events.routes");
-const notificationRoutes = require("./src/routes/notifications.routes")
-
-//Middlewares
+// Middlewares global
+app.use(
+    cors({
+        origin: process.env.FRONTEND_URL || "http://localhost:5173"
+    })
+);
 app.use(express.json());
 
-app.use((req, res, next) => {
-    res.header('Access-Control-Allow-Origin', 'http://localhost:5173');
-    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
-    next();
+
+// Settings
+app.set('port', process.env.PORT || 4000);
+
+// Ruta general de prueba
+app.get("/health", (req, res) => {
+    return res.status(200).json({
+        success: true,
+        message: "API de Acadex funcionando"
+    });
 });
-
-app.use(express.static(path.join(__dirname, 'frontend', 'AcadexFrontend', 'public')))
-
-// settings
-app.set('port', process.env.PORT);
-// routes
-app.get('/', (req, res)=>{
-    res.sendFile(path.join(__dirname, '..', "frontend", "AcadexFrontend", 'public', "index.html"));
-});
-app.get('/api/saludo', (req, res)=>{
-    res.json({
-        mensaje: 'hola'
-    })
-});
-app.listen(app.get('port'), ()=>{
-console.log(`Aplicacion corriendo en el puerto ${app.get('port')}`)
-})
-
-
 
 
 //-----------------Routes------------------
-app.use("/api/auth", authRoutes);
-app.use("/api/users", userRoutes);
-app.use("/api/courses", courseRoutes);
-app.use("/api/tasks", taskRoutes);
-app.use("/api/submissions", submissionRoutes);
-app.use("/api/events", eventRoutes);
-app.use("/api/notifications", notificationRoutes);
+app.use("/api", apiRoutes);
 
 
-//------------------------------------------------------------------------
+// Iniciando el servidor
+
+app.listen(app.get('port'), ()=>{
+console.log(`Aplicacion corriendo en el puerto ${app.get('port')}`)
+});
