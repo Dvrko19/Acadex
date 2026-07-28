@@ -17,11 +17,15 @@ const login = async ({ email, password }) => {
   }
 
   return {
-    id: userExist.id,
-    name: userExist.name,
-    email: userExist.email,
-    role: userExist.role,
+    token,
+    user: {
+      id: userExist.id,
+      name: userExist.name,
+      email: userExist.email,
+      role: userExist.role
+    }
   };
+
 };
 
 module.exports = {

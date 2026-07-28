@@ -1,38 +1,81 @@
 const express = require("express");
 const router = express.Router();
 
-const taskController =require("../controllers/tasks.controller");
+const taskController = require("../controllers/tasks.controller");
 
+const {
+    authenticateToken,
+    authorizeRoles
+} = require("../middlewares/auth.middleware");
 
-router.get("/pending", taskController.getPendingTasks);
+router.get(
+    "/pending",
+    authenticateToken,
+    authorizeRoles("admin", "teacher", "student"),
+    taskController.getPendingTasks
+);
 
-router.get("/expired", taskController.getExpiredTasks);
+router.get(
+    "/expired",
+    authenticateToken,
+    authorizeRoles("admin", "teacher"),
+    taskController.getExpiredTasks
+);
 
-router.get("/search", taskController.searchTasksByTitle);
+router.get(
+    "/search",
+    authenticateToken,
+    authorizeRoles("admin", "teacher", "student"),
+    taskController.searchTasksByTitle
+);
 
-router.get("/count", taskController.countTasks);
-
-
-router.get("/", taskController.getTasks);
-
-
-router.post("/", taskController.createTask);
-
+router.get(
+    "/count",
+    authenticateToken,
+    authorizeRoles("admin", "teacher"),
+    taskController.countTasks
+);
 
 router.get(
     "/course/:courseId",
+    authenticateToken,
+    authorizeRoles("admin", "teacher", "student"),
     taskController.getTasksByCourse
 );
 
+router.get(
+    "/",
+    authenticateToken,
+    authorizeRoles("admin", "teacher", "student"),
+    taskController.getTasks
+);
 
-router.get("/:id", taskController.getTaskById);
+router.post(
+    "/",
+    authenticateToken,
+    authorizeRoles("admin", "teacher"),
+    taskController.createTask
+);
 
+router.get(
+    "/:id",
+    authenticateToken,
+    authorizeRoles("admin", "teacher", "student"),
+    taskController.getTaskById
+);
 
-router.put("/:id", taskController.updateTask);
+router.put(
+    "/:id",
+    authenticateToken,
+    authorizeRoles("admin", "teacher"),
+    taskController.updateTask
+);
 
-
-router.delete("/:id", taskController.deleteTask);
-
-
+router.delete(
+    "/:id",
+    authenticateToken,
+    authorizeRoles("admin", "teacher"),
+    taskController.deleteTask
+);
 
 module.exports = router;

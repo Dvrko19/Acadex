@@ -4,19 +4,24 @@ const router = express.Router();
 const userController =
 require("../controllers/user.controller");
 
-
-// del service
-
-// router.get(
-//     "/",
-//     userController.getUsers
-// );
+const {
+    authenticateToken,
+    authorizeRoles
+} = require("../middlewares/auth.middleware");
 
 
-// router.get(
-//     "/:id",
-//     userController.getUserById
-// );
+router.get(
+    "/",
+    authenticateToken,
+    authorizeRoles("admin"),
+    userController.findAll
+);
+
+
+router.get(
+    "/:id",
+    userController.findById
+);
 
 
 // CRUD
