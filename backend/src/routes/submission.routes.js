@@ -1,44 +1,81 @@
 const express = require("express");
 const router = express.Router();
 
-const submissionController =
-require("../controllers/submissions.controller");
+const taskController = require("../controllers/tasks.controller");
 
+const {
+    authenticateToken,
+    authorizeRoles
+} = require("../middlewares/auth.middleware");
+
+router.get(
+    "/pending",
+    authenticateToken,
+    authorizeRoles("admin", "teacher", "student"),
+    taskController.getPendingTasks
+);
+
+router.get(
+    "/expired",
+    authenticateToken,
+    authorizeRoles("admin", "teacher"),
+    taskController.getExpiredTasks
+);
+
+router.get(
+    "/search",
+    authenticateToken,
+    authorizeRoles("admin", "teacher", "student"),
+    taskController.searchTasksByTitle
+);
+
+router.get(
+    "/count",
+    authenticateToken,
+    authorizeRoles("admin", "teacher"),
+    taskController.countTasks
+);
+
+router.get(
+    "/course/:courseId",
+    authenticateToken,
+    authorizeRoles("admin", "teacher", "student"),
+    taskController.getTasksByCourse
+);
 
 router.get(
     "/",
-    submissionController.getSubmissions
+    authenticateToken,
+    authorizeRoles("admin", "teacher", "student"),
+    taskController.getTasks
 );
-
-
-router.get(
-    "/task/:taskId",
-    submissionController.getSubmissionsByTasks
-);
-
-
-router.get(
-    "/student/:studentId",
-    submissionController.getSubmissionsByStudents
-);
-
 
 router.post(
     "/",
-    submissionController.createSubmission
+    authenticateToken,
+    authorizeRoles("admin", "teacher"),
+    taskController.createTask
 );
 
+router.get(
+    "/:id",
+    authenticateToken,
+    authorizeRoles("admin", "teacher", "student"),
+    taskController.getTaskById
+);
 
 router.put(
     "/:id",
-    submissionController.updateSubmission
+    authenticateToken,
+    authorizeRoles("admin", "teacher"),
+    taskController.updateTask
 );
-
 
 router.delete(
     "/:id",
-    submissionController.deleteSubmission
+    authenticateToken,
+    authorizeRoles("admin", "teacher"),
+    taskController.deleteTask
 );
-
 
 module.exports = router;

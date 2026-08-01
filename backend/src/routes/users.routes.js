@@ -1,47 +1,48 @@
 const express = require("express");
 const router = express.Router();
 
-const userController =
-require("../controllers/user.controller");
+const userController = require("../controllers/user.controller");
 
 const {
-    authenticateToken,
-    authorizeRoles
+  authenticateToken,
+  authorizeRoles,
 } = require("../middlewares/auth.middleware");
 
-
 router.get(
-    "/",
-    authenticateToken,
-    authorizeRoles("admin"),
-    userController.findAll
+  "/",
+  authenticateToken,
+  authorizeRoles("admin"),
+  userController.findAll,
 );
 
-
 router.get(
-    "/:id",
-    userController.findById
+  "/:id",
+  authenticateToken,
+  authorizeRoles("admin"),
+  userController.findById,
 );
-
 
 // CRUD
 
 router.post(
-    "/",
-    userController.createUser
+  "/",
+  authenticateToken,
+  authorizeRoles("admin"),
+  userController.createUser,
 );
-
 
 router.put(
-    "/:id",
-    userController.updateUser
+  "/:id",
+  authenticateToken,
+  authorizeRoles("admin"),
+  userController.updateUser,
 );
-
 
 router.delete(
-    "/:id",
-    userController.deleteUser
+  "/:id",
+  authenticateToken,
+  authorizeRoles("admin"),
+  userController.deleteUser,
 );
-
 
 module.exports = router;
