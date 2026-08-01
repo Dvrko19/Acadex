@@ -1,4 +1,5 @@
 const db = require('../config/db');
+const eventBus = require("../events/eventBus");
 
 const findCourseById =  async (id) =>{
     const [rows] = await db.query(
@@ -35,19 +36,25 @@ const createCourse = async ({name, description, teacherId}) =>{
         "INSERT INTO courses (name, description, teacherId) VALUES (?, ?, ?)",
         [name, description, teacherId]
     )
-    return {
+    const createdCourse = {
         id: result.insertId,
         name,
         description,
         teacherId
     }   
+    eventBus.emit("course.created", createdCourse)
+    return createdCourse
 }
 const deleteCourse = async (id)=>{
     const result = await db.query(
         "DELETE FROM courses WHERE id = ?",
         [id]
     )
-    return result;
+    const deletedCourse = {
+        id
+    }
+    eventBus.emit("course.deleted", deletedCourse)
+    return deletedCourse;
 }
 const updateCourses = async (id, {name, description, teacherId}) =>{
     const [result] = await db.query(
@@ -58,7 +65,14 @@ const updateCourses = async (id, {name, description, teacherId}) =>{
         `,
         [name, description, teacherId, id]
     )
-    return result
+    const updatedCourses = {
+        id,
+        name,
+        description,
+        teacherId
+    }
+    eventBus.emit("course.updated", updatedCourses)
+    return updatedCourses
 }
 const getCourseByTeacher = async (teacherId) =>{
     const[rows] = await db.query(
@@ -85,8 +99,14 @@ const enrollStudentInCourse = async ({courseId, studentId}) =>{
         `,
         [courseId, studentId]
     );
+    const enrollement = {
+        id: result.insertId,
+        courseId,
+        studentId
+    }
+    eventBus.emit("course.enroll", enrollement)
 
-    return result;
+    return enrollement;
 }
 const getStudentsByCourses = async (courseId) => {
     const[rows] = await db.query (
@@ -129,8 +149,12 @@ const removeStudentFromCourse = async ({courseId, studentId}) => {
         `,
         [courseId, studentId]
     );
-
-    return result;
+    const removedStudent = {
+        courseId,
+        studentId
+    }
+    eventBus.emit("course.removedStudentFromCourse", removedStudent)
+    return removedStudent;
 };
 module.exports = {
     findCourseById,

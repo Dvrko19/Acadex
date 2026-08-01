@@ -30,16 +30,14 @@ function Login() {
 
       console.log("Respuesta:", response.data);
 
-      const user = response.data.data;
+      const {token ,user} = response.data.data;
 
-      localStorage.setItem(
-        "user",
-        JSON.stringify(user)
-      );
+      localStorage.setItem("token", token);
+      localStorage.setItem("user",JSON.stringify(user));
 
       setMessage("Inicio de sesión exitoso");
 
-      navigate("/dashboard");
+      navigate("/Dashboard");
     } catch (error) {
       console.error(error);
 

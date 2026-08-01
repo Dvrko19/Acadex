@@ -1,5 +1,5 @@
 const db = require('../config/db');
-
+const eventBus = require('../events/eventBus');
 
 const getTaskById = async (id)=>{
     const[rows] = await db.query(
@@ -20,13 +20,16 @@ const createTask = async ({courseId, title, description, dueDate}) =>{
         "INSERT INTO tasks (courseId, title, description, dueDate) VALUES (?, ?, ?, ?)",
         [courseId, title, description, dueDate]
     )
-    return {
+    const createdTask = {
         id: result.insertId,
         courseId,
         title,
         description,
         dueDate
     }
+
+    eventBus.emit("task.created", createdTask);
+    return createdTask
 }
 const updateTask = async (id,{courseId, title, description, dueDate}) =>{
     const[result] = await db.query(
@@ -36,14 +39,26 @@ const updateTask = async (id,{courseId, title, description, dueDate}) =>{
         `,
         [courseId, title, description, dueDate, id]
     )//Unos de los campos (courseId) no estaba escrito correctamente (curso_id).
-    return result;
+    const updatedTask = {
+        id,
+        courseId,
+        title,
+        description,
+        dueDate
+    }
+    eventBus.emit("task.updated", updatedTask);
+    return updatedTask;
 }
 const deleteTask = async (id) =>{
     const [result] = await db.query(
         "DELETE FROM tasks WHERE id = ?",
         [id]
     );
-    return result;
+    const deletedUser = {
+        id
+    }
+    eventBus.emit("task.deleted", deletedUser)
+    return deletedUser;
 }
 
 const getTaskByCourse = async ({courseId}) =>{

@@ -1,5 +1,6 @@
 const user = require("../services/user.service");
 const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
 
 //Funcion para loguear al usuario
 const login = async ({ email, password }) => {
@@ -15,13 +16,16 @@ const login = async ({ email, password }) => {
   if (!isPasswordValid) {
     throw new Error("Usuario o Contraseña incorrecto");
   }
+  
+  const token = jwt.sign({
+      id: userExist.id,
+      name: userExist.name,
+      email: userExist.email,
+      role: userExist.role
+    }, process.env.JWT_SECRET, { expiresIn: "1h" });
 
-  return {
-    id: userExist.id,
-    name: userExist.name,
-    email: userExist.email,
-    role: userExist.role,
-  };
+  return token;
+
 };
 
 module.exports = {

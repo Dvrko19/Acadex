@@ -3,22 +3,51 @@ const router = express.Router();
 
 const courseController = require("../controllers/courses.controller");
 
+const {
+    authenticateToken,
+    authorizeRoles
+} = require("../middlewares/auth.middleware");
 
-router.get("/", courseController.getAllCourses);
+router.get(
+    "/",
+    authenticateToken,
+    authorizeRoles("admin", "teacher", "student"),
+    courseController.getAllCourses
+);
 
-router.get("/:id", courseController.getCourseById);
+router.get(
+    "/:id",
+    authenticateToken,
+    authorizeRoles("admin", "teacher", "student"),
+    courseController.getCourseById
+);
 
-router.post("/", courseController.createCourse);
+router.post(
+    "/",
+    authenticateToken,
+    authorizeRoles("admin"),
+    courseController.createCourse
+);
 
-router.put("/:id", courseController.updateCourse);
+router.put(
+    "/:id",
+    authenticateToken,
+    authorizeRoles("admin"),
+    courseController.updateCourse
+);
 
-router.delete("/:id", courseController.deleteCourse);
-
+router.delete(
+    "/:id",
+    authenticateToken,
+    authorizeRoles("admin"),
+    courseController.deleteCourse
+);
 
 router.post(
     "/:cursoId/student/:studentId",
+    authenticateToken,
+    authorizeRoles("admin"),
     courseController.enrollStudentInCourse
 );
-
 
 module.exports = router;
