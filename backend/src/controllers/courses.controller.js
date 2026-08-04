@@ -1,137 +1,86 @@
-const courseService = require('../services/courses.service');
+const courseService = require("../services/courses.service");
+const { asyncHandler } = require("../helpers/errors");
+const { requireFields, toInt } = require("../helpers/validators");
 
-const getAllCourses = async(req, res) => {
-    try {
-        const courses = await courseService.getCourses();
+const getAllCourses = asyncHandler(async (req, res) => {
+  let courses;
 
-        return res.status(200).json({
-            success: true,
-            data: courses
-        });
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: error.message
-        })
-    }
-}
+  if (req.user.role === "teacher") {
+    courses = await courseService.getCourseByTeacher(req.user.userId);
+  } else if (req.user.role === "student") {
+    courses = await courseService.getCoursesByStudent(req.user.userId);
+  } else {
+    courses = await courseService.getCourses();
+  }
 
+  return res.status(200).json({ success: true, data: courses });
+});
 
-const getCourseById = async(req, res,) => {
-    try {
-        const course = await courseService.findCourseById(req.params.id);
+const getMyCourses = asyncHandler(async (req, res) => {
+  const courses = req.user.role === "teacher"
+    ? await courseService.getCourseByTeacher(req.user.userId)
+    : await courseService.getCoursesByStudent(req.user.userId);
 
-        if(!course){
-            return res.status(404).json({
-                success: false,
-                message: "Curso no encontrado."
-            });
-        }
+  return res.status(200).json({ success: true, data: courses });
+});
 
-        return res.status(200).json({
-            success: true,
-            data: course
-        })
-    } catch (error) {
-        return res.status(500).json({
-            success: false,
-            message: error.message
-        })
-    }
-}
+const getCourseById = asyncHandler(async (req, res) => {
+  const course = await courseService.assertCanAccessCourse(toInt(req.params.id), req.user);
+  return res.status(200).json({ success: true, data: course });
+});
 
-const createCourse = async(req, res,) => {
-    try {
-        const newCourse = await courseService.createCourse(req.body)
+const createCourse = asyncHandler(async (req, res) => {
+  requireFields(req.body, ["name", "teacherId"]);
 
-        return res.status(201).json({
-            success: true,
-            message: "Curso creado correctamente",
-            data: newCourse
-        })
-    } catch (error) {
-        return res.status(400).json({
-            success: false,
-            message: error.message
-        })
-    }
-}
+  const newCourse = await courseService.createCourse({
+    ...req.body,
+    teacherId: toInt(req.body.teacherId, "teacherId")
+  });
 
-const updateCourse = async(req, res,) => {
-    try {
-        const result = await courseService.updateCourses(
-            req.params.id,
-            req.body
-        );
+  return res.status(201).json({
+    success: true,
+    message: "Curso creado correctamente",
+    data: newCourse
+  });
+});
 
-        if(result.affectedRows === 0 ){
-            return res.status(404).json({
-                success: false,
-                message: "Curso no encontrado"
-            });
-        }
+const updateCourse = asyncHandler(async (req, res) => {
+  const result = await courseService.updateCourses(toInt(req.params.id), {
+    ...req.body,
+    teacherId: req.body.teacherId ? toInt(req.body.teacherId, "teacherId") : undefined
+  });
 
-        return res.status(200).json({
-            success: true,
-            message: "Curso actualizado correctamente"
-        });
+  return res.status(200).json({
+    success: true,
+    message: "Curso actualizado correctamente",
+    data: result
+  });
+});
 
-    } catch (error) {
-        res.status(400).json({
-            success: false,
-            message: error.message
-        })
-    }
-}
+const deleteCourse = asyncHandler(async (req, res) => {
+  await courseService.deleteCourse(toInt(req.params.id));
+  return res.status(204).send();
+});
 
-const deleteCourse = async(req, res) => {
-    try {
-        const result = await courseService.deleteCourse(req.params.id);
+const enrollStudentInCourse = asyncHandler(async (req, res) => {
+  const result = await courseService.enrollStudentInCourse({
+    courseId: toInt(req.params.courseId || req.params.cursoId, "courseId"),
+    studentId: toInt(req.params.studentId, "studentId")
+  });
 
-        if(result.affectedRows === 0){
-            return res.status(404).json({
-                success: false,
-                massage: "Curso no encontrado"
-            });
-        }
-
-        return res.status(200).json({
-            success: true,
-            message: "Curso eliiminado correctamente"
-        });
-    } catch (error) {
-        return res.status(500).json({
-            success: false,
-            message: error.message
-        });
-    }
-}
-
-const enrollStudentInCourse = async(req, res) => {
-    try {
-        const result = await courseService.enrollStudentInCourse({
-            cursoId: req.params.cursoId,
-            studentId: req.params.studentId
-        });
-
-        return res.status(201).json({
-            success: true,
-            message: "Estudiante inscrito correctamente",
-            data: result
-        })
-    } catch (error) {
-        return res.status(400).json({
-            success: false,
-            message: error.message
-        })   
-    }
-}
+  return res.status(201).json({
+    success: true,
+    message: "Estudiante inscrito correctamente",
+    data: result
+  });
+});
 
 module.exports = {
-    getAllCourses,
-    getCourseById,
-    createCourse,
-    updateCourse,
-    deleteCourse,
-    enrollStudentInCourse
-}
+  getAllCourses,
+  getMyCourses,
+  getCourseById,
+  createCourse,
+  updateCourse,
+  deleteCourse,
+  enrollStudentInCourse
+};

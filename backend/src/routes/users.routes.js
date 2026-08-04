@@ -2,27 +2,31 @@ const express = require("express");
 const router = express.Router();
 
 const userController = require("../controllers/user.controller");
-
 const {
   authenticateToken,
-  authorizeRoles,
+  authorizeRoles
 } = require("../middlewares/auth.middleware");
 
-// router.get(
-//   "/",
-//   authenticateToken,
-//   authorizeRoles("admin"),
-//   userController.findAll,
-// );
+router.get(
+  "/",
+  authenticateToken,
+  authorizeRoles("admin"),
+  userController.getUsers
+);
 
-// router.get(
-//   "/:id",
-//   authenticateToken,
-//   authorizeRoles("admin"),
-//   userController.findById,
-// );
+router.get(
+  "/search",
+  authenticateToken,
+  authorizeRoles("admin", "teacher"),
+  userController.searchUsers
+);
 
-// CRUD
+router.get(
+  "/:id",
+  authenticateToken,
+  authorizeRoles("admin"),
+  userController.getUserById
+);
 
 router.post(
   "/",
@@ -35,14 +39,14 @@ router.put(
   "/:id",
   authenticateToken,
   authorizeRoles("admin"),
-  userController.updateUser,
+  userController.updateUser
 );
 
 router.delete(
   "/:id",
   authenticateToken,
   authorizeRoles("admin"),
-  userController.deleteUser,
+  userController.deleteUser
 );
 
 module.exports = router;

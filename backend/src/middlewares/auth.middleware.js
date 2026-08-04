@@ -1,47 +1,44 @@
 const jwt = require("jsonwebtoken");
+const { AppError } = require("../helpers/errors");
 
 const authenticateToken = (req, res, next) => {
   const authHeader = req.headers.authorization;
 
   if (!authHeader) {
-    const error = new Error("Token no proporcionado");
-    error.statusCode = 401;
-    return next(error);
+    return next(new AppError("Token no proporcionado", 401));
   }
 
-  const token = authHeader.split(" ")[1];
+  const [scheme, token] = authHeader.split(" ");
 
-  if (!token) {
-    const error = new Error("Formato de token inválido");
-    error.statusCode = 401;
-    return next(error);
+  if (scheme !== "Bearer" || !token) {
+    return next(new AppError("Formato de token invalido", 401));
   }
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const userId = decoded.userId || decoded.id;
 
-    req.user = decoded;
+    req.user = {
+      ...decoded,
+      id: userId,
+      userId,
+      role: decoded.role
+    };
 
     next();
   } catch (error) {
-    error.message = "Token inválido o expirado";
-    error.statusCode = 401;
-    next(error);
+    next(new AppError("Token invalido o expirado", 401));
   }
 };
 
 const authorizeRoles = (...roles) => {
   return (req, res, next) => {
     if (!req.user) {
-      const error = new Error("Usuario no autenticado");
-      error.statusCode = 401;
-      return next(error);
+      return next(new AppError("Usuario no autenticado", 401));
     }
 
     if (!roles.includes(req.user.role)) {
-      const error = new Error("No tienes permisos para esta acción");
-      error.statusCode = 403;
-      return next(error);
+      return next(new AppError("No tienes permisos para esta accion", 403));
     }
 
     next();

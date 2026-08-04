@@ -1,74 +1,45 @@
 const eventBus = require("../events/eventBus");
-const notificationsServices = require("../services/notifications.service");
+const notificationService = require("../services/notifications.service");
 const courseService = require("../services/courses.service");
 
-//listener para el evento de usuario creado 
-eventBus.on("task.created", async (createdTask) => {
-    try {
-        // Obtener todos los estudiantes inscritos en el curso
-        const students = await courseService.getStudentsByCourses(
-            createdTask.courseId
-        );
+eventBus.on("TASK_CREATED", async (createdTask) => {
+  try {
+    const students = await courseService.getStudentsByCourses(createdTask.courseId);
 
-        // Crear una notificación para cada estudiante
-        for (const student of students) {
-            await notificationService.createNotification({
-                userId: student.id,
-                message: `Se creó una nueva tarea: ${createdTask.title}, con fecha de entrega: ${createdTask.dueDate}`
-            });
-        }
-
-        console.log(
-            `Se crearon ${students.length} notificaciones para la tarea "${createdTask.title}".`
-        );
-
-    } catch (error) {
-        console.error(
-            "Error procesando task.created:",
-            error.message
-        );
+    for (const student of students) {
+      await notificationService.createNotification({
+        userId: student.id,
+        type: "task_created",
+        title: "Nueva tarea",
+        referenceId: createdTask.id,
+        referenceType: "task",
+        message: `Se creo una nueva tarea: ${createdTask.title}, con fecha de entrega: ${createdTask.dueDate}`
+      });
     }
+  } catch (error) {
+    console.error("Error procesando TASK_CREATED:", error.message);
+  }
 });
 
+eventBus.on("TASK_UPDATED", async (updatedTask) => {
+  try {
+    const students = await courseService.getStudentsByCourses(updatedTask.courseId);
 
-
-
-
-
-//listener para el evento de tarea actualizada
-eventBus.on("task.updated", async (updatedTask) => {
-    try {
-        // Obtener todos los estudiantes inscritos en el curso
-        const students = await courseService.getStudentsByCourses(
-            updatedTask.courseId
-        );
-
-        // Crear una notificación para cada estudiante
-        for (const student of students) {
-            await notificationService.createNotification({
-                userId: student.id,
-                message: `La tarea "${updatedTask.title}" fue actualizada. Nueva fecha de entrega: ${updatedTask.dueDate}`
-            });
-        }
-
-        console.log(
-            `Se notificó a ${students.length} estudiantes sobre la actualización de la tarea "${updatedTask.title}".`
-        );
-
-    } catch (error) {
-        console.error(
-            "Error procesando task.updated:",
-            error.message
-        );
+    for (const student of students) {
+      await notificationService.createNotification({
+        userId: student.id,
+        type: "task_created",
+        title: "Tarea actualizada",
+        referenceId: updatedTask.id,
+        referenceType: "task",
+        message: `La tarea "${updatedTask.title}" fue actualizada. Nueva fecha de entrega: ${updatedTask.dueDate}`
+      });
     }
+  } catch (error) {
+    console.error("Error procesando TASK_UPDATED:", error.message);
+  }
 });
 
-
-
-
-//listener para el evento de tarea eliminada
-eventBus.on("task.deleted ",async deletedTask => {
-    console.log(`Se ha eliminado la tarea con el ID: ${deletedTask.id}`);
-})
-
-
+eventBus.on("TASK_DELETED", async (deletedTask) => {
+  console.log(`Se ha desactivado la tarea con el ID: ${deletedTask.id}`);
+});

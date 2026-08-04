@@ -1,66 +1,56 @@
 const eventService = require("../services/events.service");
+const { asyncHandler } = require("../helpers/errors");
+const { requireFields, toInt } = require("../helpers/validators");
 
-const getEvents = async (req, res) => {
-    try {
-        const events = await eventService.getEvents();
+const getEvents = asyncHandler(async (req, res) => {
+  const events = await eventService.getEvents(req.user);
+  return res.status(200).json({ success: true, data: events });
+});
 
-        return res.status(200).json({
-            success: true,
-            data: events
-        });
-    } catch (error) {
-        return res.status(500).json({
-            success: false,
-            message: "Error al obtener los eventos"
-        });
-    }
-};
+const getEventById = asyncHandler(async (req, res) => {
+  const event = await eventService.findEventForUser(toInt(req.params.id), req.user);
+  return res.status(200).json({ success: true, data: event });
+});
 
-const getEventById = async (req, res) => {
-    try {
-        const { id } = req.params;
+const getEventsByUser = asyncHandler(async (req, res) => {
+  if (req.user.role !== "admin" && Number(req.params.userId) !== Number(req.user.userId)) {
+    return res.status(403).json({
+      success: false,
+      message: "No puedes consultar eventos de otro usuario"
+    });
+  }
 
-        const event = await eventService.findEventById(id);
+  const events = await eventService.findEventByUser(toInt(req.params.userId, "userId"));
+  return res.status(200).json({ success: true, data: events });
+});
 
-        if (!event) {
-            return res.status(404).json({
-                success: false,
-                message: "Evento no encontrado"
-            });
-        }
+const createEvent = asyncHandler(async (req, res) => {
+  requireFields(req.body, ["eventType", "startDate"]);
 
-        return res.status(200).json({
-            success: true,
-            data: event
-        });
-    } catch (error) {
-        return res.status(500).json({
-            success: false,
-            message: "Error al obtener el evento"
-        });
-    }
-};
+  const event = await eventService.createEvent(
+    {
+      ...req.body,
+      courseId: req.body.courseId ? toInt(req.body.courseId, "courseId") : null
+    },
+    req.user
+  );
 
-const getEventsByUser = async (req, res) => {
-    try {
-        const { userId } = req.params;
+  return res.status(201).json({
+    success: true,
+    message: "Evento creado correctamente",
+    data: event
+  });
+});
 
-        const events = await eventService.findEventByUser(userId);
-
-        return res.status(200).json({
-            success: true,
-            data: events
-        });
-    } catch (error) {
-        return res.status(500).json({
-            success: false,
-            message: "Error al obtener los eventos del usuario"
-        });
-    }
-};
+const deleteEvent = asyncHandler(async (req, res) => {
+  await eventService.deleteEvent(toInt(req.params.id), req.user);
+  return res.status(204).send();
+});
 
 module.exports = {
-    getEvents,
-    getEventById,
-    getEventsByUser
+  getEvents,
+  getEventById,
+  getEventsByUser,
+  createEvent,
+  deleteEvent
 };

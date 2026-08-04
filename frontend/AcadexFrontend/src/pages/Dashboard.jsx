@@ -1,159 +1,48 @@
-import { useNavigate } from "react-router-dom";
+import { Navigate, useParams } from "react-router-dom";
 
+import { useAuth } from "../hooks/useAuth";
+import { DashboardLayout } from "../layouts/DashboardLayout";
+import { CoursesModule } from "../features/dashboard/CoursesModule";
+import { DashboardHome } from "../features/dashboard/DashboardHome";
+import { EventsModule } from "../features/dashboard/EventsModule";
+import { NotificationsModule } from "../features/dashboard/NotificationsModule";
+import { SubmissionsModule } from "../features/dashboard/SubmissionsModule";
+import { TasksModule } from "../features/dashboard/TasksModule";
+import { UsersModule } from "../features/dashboard/UsersModule";
 import "../styles/Dashboard.css";
 
-function Dashboard() {
-  const navigate = useNavigate();
+const roleModules = {
+  admin: ["dashboard", "users", "courses", "tasks", "events", "notifications"],
+  teacher: ["dashboard", "courses", "tasks", "submissions", "events", "notifications"],
+  student: ["dashboard", "courses", "tasks", "submissions", "events", "notifications"]
+};
 
-  const storedUser = localStorage.getItem("user");
+const titles = {
+  dashboard: "Inicio",
+  users: "Usuarios",
+  courses: "Cursos",
+  tasks: "Tareas",
+  submissions: "Entregas",
+  events: "Eventos",
+  notifications: "Notificaciones"
+};
 
-  const user = storedUser
-    ? JSON.parse(storedUser)
-    : null;
+const modules = {
+  dashboard: DashboardHome,
+  users: UsersModule,
+  courses: CoursesModule,
+  tasks: TasksModule,
+  submissions: SubmissionsModule,
+  events: EventsModule,
+  notifications: NotificationsModule
+};
 
-  const logout = () => {
-    localStorage.removeItem("user");
-    localStorage.removeItem("token");
+export default function Dashboard() {
+  const { module = "dashboard" } = useParams();
+  const { user } = useAuth();
+  if (!(roleModules[user.role] || []).includes(module)) return <Navigate to="/403" replace />;
 
-    navigate("/login");
-  };
-
-  return (
-    <div className="dashboard-layout">
-      <aside className="sidebar">
-        <div className="sidebar-logo">
-          <span>🎓</span>
-          <span>Acadex</span>
-        </div>
-
-        <nav className="sidebar-nav">
-          <button className="nav-item active">
-            Inicio
-          </button>
-
-          <button className="nav-item">
-            Cursos
-          </button>
-
-          <button className="nav-item">
-            Tareas
-          </button>
-
-          <button className="nav-item">
-            Notificaciones
-          </button>
-
-          <button className="nav-item">
-            Reportes
-          </button>
-
-          <button className="nav-item">
-            Eventos
-          </button>
-        </nav>
-
-        <button
-          className="logout-button"
-          onClick={logout}
-        >
-          Cerrar sesión
-        </button>
-      </aside>
-
-      <main className="dashboard-content">
-        <header className="dashboard-header">
-          <div>
-            <h1>
-              Bienvenido,{" "}
-              {user?.name || "Usuario"}
-            </h1>
-
-            <p>
-              Este es el resumen de tu actividad
-              académica.
-            </p>
-          </div>
-
-          <div className="user-avatar">
-            {user?.name
-              ? user.name.charAt(0).toUpperCase()
-              : "U"}
-          </div>
-        </header>
-
-        <section className="summary-grid">
-          <article className="summary-card">
-            <div className="summary-icon">
-              📚
-            </div>
-
-            <div>
-              <p>Mis cursos</p>
-              <strong>4</strong>
-            </div>
-          </article>
-
-          <article className="summary-card">
-            <div className="summary-icon">
-              📋
-            </div>
-
-            <div>
-              <p>Tareas pendientes</p>
-              <strong>7</strong>
-            </div>
-          </article>
-
-          <article className="summary-card">
-            <div className="summary-icon">
-              🔔
-            </div>
-
-            <div>
-              <p>Notificaciones</p>
-              <strong>3</strong>
-            </div>
-          </article>
-        </section>
-
-        <section className="tasks-section">
-          <h2>Tareas pendientes</h2>
-
-          <article className="task-item">
-            <div>
-              <h3>
-                Algoritmos - Tarea 2
-              </h3>
-
-              <p>
-                Entrega: 29/06/2026
-              </p>
-            </div>
-
-            <button>
-              Ver tarea
-            </button>
-          </article>
-
-          <article className="task-item">
-            <div>
-              <h3>
-                Base de Datos - Tarea 1
-              </h3>
-
-              <p>
-                Entrega: 05/07/2026
-              </p>
-            </div>
-
-            <button>
-              Ver tarea
-            </button>
-          </article>
-        </section>
-      </main>
-    </div>
-  );
+  const ActiveModule = modules[module];
+  const title = module === "courses" && user.role !== "admin" ? "Mis cursos" : module === "submissions" && user.role === "student" ? "Mis entregas" : titles[module];
+  return <DashboardLayout title={title}><ActiveModule user={user} /></DashboardLayout>;
 }
-
-export default Dashboard;

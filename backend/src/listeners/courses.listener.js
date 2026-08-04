@@ -1,67 +1,66 @@
 const eventBus = require("../events/eventBus");
 const notificationService = require("../services/notifications.service");
 
-
-
-//listener para el evento de curso creado
-eventBus.on("course.created", async (createdCourse) => {
-        await notificationService.createNotification({
-            userId: createdCourse.teacherId,
-            message: `Se te asigno un nuevo curso: ${createdCourse.name},. `
-        });
-});
-
-
-
-
-//listener para el evento de curso eliminado
-eventBus.on("course.deleted", async (deletedCourse) => {
-    console.log(`El curso ${deletedCourse.id} fue eliminado.`);
-});
-
-
-
-//listener para el evento de curso actualizado
-eventBus.on("course.updated", async (updatedCourses) => {
-        await notificationService.createNotification({
-            userId: updatedCourses.teacherId,
-            message: `Se te actualizo el curso: ${updatedCourses.name},. `
-        });
-});
-
-
-
-//listner para el evento de estudiante inscrito a un curso
-eventBus.on("course.enroll", async (enrollment) => {
-    try {
-        await notificationService.createNotification({
-            userId: enrollment.studentId,
-            message: `Te inscribiste correctamente en el curso.`
-        });
-
-        console.log("Notificación creada");
-    } catch (error) {
-        console.error(error.message);
-    }
-});
-
-
-
-//listener para el evento de estudiante desinscrito de un curso
-eventBus.on("course.removedStudentFromCourse", async (removedStudent) => {
-    try {
-    await notificationService.createdCourse({
-        userId: removedStudent.studentId,
-        message: `Has sido eliminado del curso.`
+eventBus.on("COURSE_CREATED", async (createdCourse) => {
+  try {
+    await notificationService.createNotification({
+      userId: createdCourse.teacherId,
+      type: "course_updated",
+      title: "Nuevo curso asignado",
+      referenceId: createdCourse.id,
+      referenceType: "course",
+      message: `Se te asigno un nuevo curso: ${createdCourse.name}.`
     });
+  } catch (error) {
+    console.error("Error procesando COURSE_CREATED:", error.message);
+  }
+});
 
-        console.log("Notificación creada");
-    } catch (error) {
-        console.error(error.message);
-    }
-})
+eventBus.on("COURSE_DEACTIVATED", async (deletedCourse) => {
+  console.log(`El curso ${deletedCourse.id} fue desactivado.`);
+});
 
+eventBus.on("COURSE_UPDATED", async (updatedCourse) => {
+  try {
+    await notificationService.createNotification({
+      userId: updatedCourse.teacherId,
+      type: "course_updated",
+      title: "Curso actualizado",
+      referenceId: updatedCourse.id,
+      referenceType: "course",
+      message: `Se actualizo el curso: ${updatedCourse.name}.`
+    });
+  } catch (error) {
+    console.error("Error procesando COURSE_UPDATED:", error.message);
+  }
+});
 
+eventBus.on("COURSE_ENROLLMENT_CREATED", async (enrollment) => {
+  try {
+    await notificationService.createNotification({
+      userId: enrollment.studentId,
+      type: "COURSE_ENROLLMENT_CREATED",
+      title: "Inscripcion activa",
+      referenceId: enrollment.courseId,
+      referenceType: "enrollment",
+      message: "Te inscribiste correctamente en el curso."
+    });
+  } catch (error) {
+    console.error("Error procesando COURSE_ENROLLMENT_CREATED:", error.message);
+  }
+});
 
-
-
+eventBus.on("COURSE_ENROLLMENT_DEACTIVATED", async (removedStudent) => {
+  try {
+    await notificationService.createNotification({
+      userId: removedStudent.studentId,
+      type: "course_updated",
+      title: "Inscripcion desactivada",
+      referenceId: removedStudent.courseId,
+      referenceType: "course",
+      message: "Has sido eliminado del curso."
+    });
+  } catch (error) {
+    console.error("Error procesando COURSE_ENROLLMENT_DEACTIVATED:", error.message);
+  }
+});

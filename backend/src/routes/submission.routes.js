@@ -1,81 +1,86 @@
 const express = require("express");
 const router = express.Router();
 
-const taskController = require("../controllers/tasks.controller");
-
+const submissionController = require("../controllers/submissions.controller");
 const {
-    authenticateToken,
-    authorizeRoles
+  authenticateToken,
+  authorizeRoles
 } = require("../middlewares/auth.middleware");
+const {
+  uploadSubmissionFile
+} = require("../middlewares/submission-upload.middleware");
 
 router.get(
-    "/pending",
-    authenticateToken,
-    authorizeRoles("admin", "teacher", "student"),
-    taskController.getPendingTasks
+  "/my-submissions",
+  authenticateToken,
+  authorizeRoles("student"),
+  submissionController.getMySubmissions
 );
 
 router.get(
-    "/expired",
-    authenticateToken,
-    authorizeRoles("admin", "teacher"),
-    taskController.getExpiredTasks
+  "/task/:taskId",
+  authenticateToken,
+  authorizeRoles("admin", "teacher"),
+  submissionController.getSubmissionsByTasks
 );
 
 router.get(
-    "/search",
-    authenticateToken,
-    authorizeRoles("admin", "teacher", "student"),
-    taskController.searchTasksByTitle
+  "/student/:studentId",
+  authenticateToken,
+  authorizeRoles("admin", "teacher", "student"),
+  submissionController.getSubmissionsByStudents
+);
+
+router.patch(
+  "/:submissionId/grade",
+  authenticateToken,
+  authorizeRoles("teacher"),
+  submissionController.gradeSubmission
 );
 
 router.get(
-    "/count",
-    authenticateToken,
-    authorizeRoles("admin", "teacher"),
-    taskController.countTasks
+  "/:submissionId/file",
+  authenticateToken,
+  authorizeRoles("admin", "teacher", "student"),
+  submissionController.getSubmissionFile
 );
 
 router.get(
-    "/course/:courseId",
-    authenticateToken,
-    authorizeRoles("admin", "teacher", "student"),
-    taskController.getTasksByCourse
-);
-
-router.get(
-    "/",
-    authenticateToken,
-    authorizeRoles("admin", "teacher", "student"),
-    taskController.getTasks
+  "/",
+  authenticateToken,
+  authorizeRoles("admin", "teacher"),
+  submissionController.getSubmissions
 );
 
 router.post(
-    "/",
-    authenticateToken,
-    authorizeRoles("admin", "teacher"),
-    taskController.createTask
-);
-
-router.get(
-    "/:id",
-    authenticateToken,
-    authorizeRoles("admin", "teacher", "student"),
-    taskController.getTaskById
+  "/",
+  authenticateToken,
+  authorizeRoles("student"),
+  uploadSubmissionFile,
+  submissionController.createSubmission
 );
 
 router.put(
-    "/:id",
-    authenticateToken,
-    authorizeRoles("admin", "teacher"),
-    taskController.updateTask
+  "/:id",
+  authenticateToken,
+  authorizeRoles("student"),
+  uploadSubmissionFile,
+  submissionController.updateSubmission
+);
+
+router.patch(
+  "/:id",
+  authenticateToken,
+  authorizeRoles("student"),
+  uploadSubmissionFile,
+  submissionController.updateSubmission
 );
 
 router.delete(
-    "/:id",
-    authenticateToken,
-    authorizeRoles("admin", "teacher"),
-    taskController.deleteTask
+  "/:id",
+  authenticateToken,
+  authorizeRoles("admin", "teacher"),
+  submissionController.deleteSubmission
 );
 
 module.exports = router;

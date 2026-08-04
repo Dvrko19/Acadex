@@ -24,3 +24,6 @@ dist-ssr
 *.sw?
 
 .env
+
+# Private academic submissions. Never expose or commit this directory.
+private-uploads/

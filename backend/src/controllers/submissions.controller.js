@@ -1,155 +1,121 @@
-const SubmissionService = require('../services/submissions.service');
+const submissionService = require("../services/submissions.service");
+const { asyncHandler } = require("../helpers/errors");
+const { requireFields, toInt } = require("../helpers/validators");
 
-const getSubmissions = async(req, res) => {
-    try {
-        const submissions = await SubmissionService.getSubmission();
+const getSubmissions = asyncHandler(async (req, res) => {
+  const submissions = await submissionService.getSubmissionsForUser(req.user);
+  return res.status(200).json({ success: true, data: submissions });
+});
 
-        return res.status(200).json({
-            success: true,
-            data: submissions
-        });
-    } catch (error) {
-        return res.status(500).json({
-            success: false,
-            message: "Error al obtener la entrega",
-            error: error.message
-        });
-    }
-}
+const getSubmissionsByTasks = asyncHandler(async (req, res) => {
+  const submissions = await submissionService.getSubmissionsByTaskForReviewer(
+    toInt(req.params.taskId, "taskId"),
+    req.user,
+    req.query.status
+  );
 
-const getSubmissionsByTasks = async(req, res) => {
-    try {
-        const {taskId} = req.params;
+  return res.status(200).json({ success: true, data: submissions });
+});
 
-        const submissions = await SubmissionService.getSubmissionByTasks(taskId);
+const getSubmissionsByStudents = asyncHandler(async (req, res) => {
+  const studentId = toInt(req.params.studentId, "studentId");
+  const submissions = await submissionService.getSubmissionsByStudentForUser(
+    studentId,
+    req.user
+  );
+  return res.status(200).json({ success: true, data: submissions });
+});
 
-        return res.status(200).json({
-            success: true,
-            data: submissions
-        });
-    } catch (error) {
-        return res.status(500).json({
-            success: false,
-            message: "Error al obtener las entregas de la tarea",
-            error: error.message
-        });
-    }
-}
+const getMySubmissions = asyncHandler(async (req, res) => {
+  const submissions = await submissionService.getSubmissionByStudents(req.user.userId);
+  return res.status(200).json({ success: true, data: submissions });
+});
 
-const getSubmissionsByStudents = async(req, res) => {
-    try {
-        const {studentId} = req.params;
+const createSubmission = asyncHandler(async (req, res) => {
+  requireFields(req.body, ["taskId"]);
 
-        const submissions = await SubmissionService.getSubmissionByStudents(studentId);
+  const submission = await submissionService.createSubmission({
+    taskId: toInt(req.body.taskId, "taskId"),
+    studentId: req.user.userId,
+    file: req.file
+  });
 
-        return res.status(200).json({
-            success: true,
-            data: submissions
-        });
-    } catch (error) {
-        return res.status(500).json({
-            success: false,
-            message: "Error al obtener las entregas del estudiante",
-            error: error.message
-        });
-    }
-}
+  return res.status(201).json({
+    success: true,
+    message: "Tarea entregada correctamente",
+    data: submission
+  });
+});
 
-const createSubmission = async(req, res) => {
-    try {
-        const {taskId, studentId, fileUrl} = req.body;
+const updateSubmission = asyncHandler(async (req, res) => {
+  const result = await submissionService.replaceSubmission(
+    toInt(req.params.id),
+    { file: req.file },
+    req.user
+  );
 
-        if (!taskId || !studentId || !fileUrl) {
-            return res.status(400).json({
-                success: false,
-                message: "tareaId, estudianteId y archivoUrl son obligatorios",
+  return res.status(200).json({
+    success: true,
+    message: "Entrega actualizada correctamente",
+    data: result
+  });
+});
 
-            });
-        }
+const getSubmissionFile = asyncHandler(async (req, res, next) => {
+  const file = await submissionService.getSubmissionFile(
+    toInt(req.params.submissionId, "submissionId"),
+    req.user
+  );
+  const inline = file.fileExtension === "pdf";
+  const fallbackName = String(file.originalFileName || `submission.${file.fileExtension}`)
+    .replace(/[^a-zA-Z0-9._-]/g, "_");
+  const encodedName = encodeURIComponent(file.originalFileName || fallbackName)
+    .replace(/['()*]/g, (character) =>
+      `%${character.charCodeAt(0).toString(16).toUpperCase()}`
+    );
 
-        const submission = await SubmissionService.createSubmission({
-            taskId,
-            studentId,
-            fileUrl
-        });
+  res.set({
+    "Content-Type": file.mimeType,
+    "Content-Disposition": `${inline ? "inline" : "attachment"}; filename="${fallbackName}"; filename*=UTF-8''${encodedName}`,
+    "X-Content-Type-Options": "nosniff",
+    "Cache-Control": "private, no-store"
+  });
+  file.stream.on("error", next);
+  file.stream.pipe(res);
+});
 
-        return res.status(201).json({
-            success: true,
-            message: "Tarea entregada correctamente",
-            data: submission
-        });
-    } catch (error) {
-        return res.status(400).json({
-            success: false,
-            message: error.message
-        });
-    }
-}
+const gradeSubmission = asyncHandler(async (req, res) => {
+  requireFields(req.body, ["grade"]);
 
-const updateSubmission = async(req, res) => {
-    try {
-        const {id} = req.params;
-        const {fileUrl} = req.body;
+  const result = await submissionService.gradeSubmission(
+    toInt(req.params.submissionId, "submissionId"),
+    {
+      grade: req.body.grade,
+      feedback: req.body.feedback
+    },
+    req.user
+  );
 
-        if(!fileUrl){
-            return res.status(400).json({
-                success: false,
-                message: "archivoUrl es obligatorio"
-            });
-        }
+  return res.status(200).json({
+    success: true,
+    message: "Entrega calificada correctamente",
+    data: result
+  });
+});
 
-        const result = await SubmissionService.updateSubmission(id, {fileUrl});
-
-        if(result.affectedRows === 0) {
-            return res.status(404).json({
-                success: false,
-                message: "Entrega no encontrada"
-            })
-        }
-
-        return res.status(200).json({
-            success: true,
-            message: "Entrega actualizada correctamente"
-        })
-    } catch (error) {
-        return res.status(400).jso({
-            success: false,
-            message: error.message
-        })   
-    }
-}
-
-const deleteSubmission = async(req, res) => {
-    try {
-        const {id} = req.params;
-
-        const result = await SubmissionService.deleteSubmission(id);
-
-        if(result.affectedRows === 0){
-            return res.status(404).json({
-                success: false,
-                message: "Entrega no encontrada"
-            });
-        }
-
-        return res.status(200).json({
-            success: true,
-            message: "Entrega eliminada correctamente"
-        });
-    } catch (error) {
-        return res.status(500).json({
-            success: false,
-            message: error.message
-        })
-    }
-}
+const deleteSubmission = asyncHandler(async (req, res) => {
+  await submissionService.deleteSubmission(toInt(req.params.id), req.user);
+  return res.status(204).send();
+});
 
 module.exports = {
-    getSubmissions,
-    getSubmissionsByTasks,
-    getSubmissionsByStudents,
-    createSubmission,
-    updateSubmission,
-    deleteSubmission
-
-}
+  getSubmissions,
+  getSubmissionsByTasks,
+  getSubmissionsByStudents,
+  getMySubmissions,
+  createSubmission,
+  updateSubmission,
+  getSubmissionFile,
+  gradeSubmission,
+  deleteSubmission
+};

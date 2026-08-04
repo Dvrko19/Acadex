@@ -1,79 +1,47 @@
-const notificationService = require('../services/notifications.service');
+const notificationService = require("../services/notifications.service");
+const { asyncHandler } = require("../helpers/errors");
+const { toInt } = require("../helpers/validators");
 
-const getMyNotifications = async(req, res) => {
-    try {
-        const userId = req.user.id
+const getMyNotifications = asyncHandler(async (req, res) => {
+  const notifications = await notificationService.getNotificationByuser(req.user.userId);
+  return res.status(200).json({ success: true, data: notifications });
+});
 
-        const notifications = await notificationService.getNotificationByuser(userId);
+const countUnread = asyncHandler(async (req, res) => {
+  const total = await notificationService.countUnreadByUser(req.user.userId);
+  return res.status(200).json({ success: true, total });
+});
 
-        return res.status(200).json({
-            success: true,
-            data: notifications
-        });
-        
-    } catch (error) {
-        return res.status(500).json({
-            success: false,
-            message: "Error al obtener las notificaciones"
-        });
-    }
-}
+const markAsRead = asyncHandler(async (req, res) => {
+  const notification = await notificationService.markAsRead(
+    toInt(req.params.id),
+    req.user.userId
+  );
+  return res.status(200).json({
+    success: true,
+    message: "Notificacion marcada como leida",
+    data: notification
+  });
+});
 
-const markAsRead = async(req, res) => {
-    try {
-        const {id} = req.params;
+const markAllAsRead = asyncHandler(async (req, res) => {
+  const result = await notificationService.markAllAsRead(req.user.userId);
+  return res.status(200).json({
+    success: true,
+    message: "Notificaciones marcadas como leidas",
+    data: result
+  });
+});
 
-        const result = await notificationService.markAsRead(id);
-
-        if(result.affectedRows === 0){
-            return res.status(404).json({
-                success: false,
-                message: "Notificación no encontrada"
-            });
-        }
-
-        return res.status(200).json({
-            success: true,
-            message: "Notificación marcada como leída"
-        });
-    } catch (error) {
-        return res.status(500).json({
-            success: false,
-            message: "Error al actualizar la notificación",
-            error: error.message
-        });
-    }
-}
-
-const deleteNotification = async(req, res) => {
-    try {
-        const {id} = req.params;
-
-        const result = await notificationService.deleteNotification(id);
-    
-        if (result.affectedRows === 0) {
-            return res.status(404).json({
-                success: false,
-                message: "Notificación no encontrada"
-            });
-        }
-
-        return res.status(200).json({
-            success: true,
-            message: "Notificación eliminada"
-        });
-
-    } catch (error) {
-        return res.status(500).json({
-            success: false,
-            message: "Error al eliminar la notificación",
-            error: error.message
-        });
-    }
-}
+const deleteNotification = asyncHandler(async (req, res) => {
+  await notificationService.deleteNotification(toInt(req.params.id), req.user);
+  return res.status(204).send();
+});
 
 module.exports = {
-    getMyNotifications,
-    markAsRead,
-    deleteNotification
+  getMyNotifications,
+  countUnread,
+  markAsRead,
+  markAllAsRead,
+  deleteNotification
 };

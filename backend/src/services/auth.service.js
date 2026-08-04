@@ -1,33 +1,37 @@
-const user = require("../services/user.service");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const userService = require("./user.service");
+const { AppError } = require("../helpers/errors");
 
-//Funcion para loguear al usuario
 const login = async ({ email, password }) => {
+  const user = await userService.findByEmail(email);
 
-  const userExist = await user.findByEmail(email);
-
-  if (!userExist) {
-    throw new Error("Usuario o Contraseña incorrecto");
+  if (!user || user.deletedAt || user.status === "inactive") {
+    throw new AppError("Usuario o contrasena incorrectos", 401);
   }
 
-  const isPasswordValid = await bcrypt.compare(password, userExist.password); //Esto compara la contraseña ingresada con la que esta en la base de dato.
+  const isPasswordValid = await bcrypt.compare(password, user.password);
 
   if (!isPasswordValid) {
-    throw new Error("Usuario o Contraseña incorrecto");
+    throw new AppError("Usuario o contrasena incorrectos", 401);
   }
-  
-  const token = jwt.sign({
-      id: userExist.id,
-      name: userExist.name,
-      email: userExist.email,
-      role: userExist.role
-    }, process.env.JWT_SECRET, { expiresIn: "1h" });
 
-  return token;
+  const authUser = await userService.findSafeById(user.id);
+  const token = jwt.sign(
+    {
+      userId: user.id,
+      role: user.role
+    },
+    process.env.JWT_SECRET,
+    { expiresIn: "1h" }
+  );
 
+  return {
+    token,
+    user: authUser
+  };
 };
 
 module.exports = {
-  login,
+  login
 };

@@ -1,61 +1,111 @@
 const eventBus = require("../events/eventBus");
+const db = require("../config/db");
 const notificationService = require("../services/notifications.service");
-const courseService = require("../services/courses.service");
 
+const getTaskTeacherId = async (taskId) => {
+  const [rows] = await db.query(
+    `
+    SELECT c.teacherId
+    FROM tasks t
+    INNER JOIN courses c ON t.courseId = c.id
+    WHERE t.id = ?
+    `,
+    [taskId]
+  );
+  return rows[0]?.teacherId;
+};
 
-//listener para el evento de entrega de tarea creada
-eventBus.on("Submissions.created", async (createdSubmission) => {
-    try{
-        const students = await courseServices.getStudentsByCourses(
-            createdSubmission.courseId
-        );
+eventBus.on("SUBMISSION_CREATED", async (createdSubmission) => {
+  try {
+    const teacherId = await getTaskTeacherId(createdSubmission.taskId);
 
+    await notificationService.createNotification({
+      userId: createdSubmission.studentId,
+      type: "submission_created",
+      title: "Entrega registrada",
+      referenceId: createdSubmission.id,
+      referenceType: "submission",
+      message: `Tu entrega para la tarea ${createdSubmission.taskId} fue registrada correctamente.`
+    });
 
-        // Crear una notificación para cada estudiante
-        for(const student of students){
-            await notificationService.createNotification({
-                userId: student.id,
-                message: `Se creó una nueva entrega de tarea: ${createdSubmission.title}, con fecha de entrega: ${createdSubmission.dueDate}`
-            });
-        }
-        // Loguear la cantidad de notificaciones creadas
-        console.log(
-            `Se notificó a ${students.length} estudiantes sobre la nueva entrega de tarea "${createdSubmission.title}".`
-        )
-    }catch(error){
-        console.error(`Lo sentimos, ocurrió un error al subir la entrega de la tarea: ${error.message}`);
+    if (teacherId) {
+      await notificationService.createNotification({
+        userId: teacherId,
+        type: "submission_created",
+        title: "Nueva entrega",
+        referenceId: createdSubmission.id,
+        referenceType: "submission",
+        message: `Hay una nueva entrega pendiente de revision para la tarea ${createdSubmission.taskId}.`
+      });
     }
-})
-
-
-
-
-//listener para el evento de entrega de tarea actualizada
-
-eventBus.on("submission.updated", async (updatedSubmission) => {
-    try {
-        console.log(
-            `La entrega ${updatedSubmission.id} fue actualizada.`
-        );
-
-        //Nota falta mas informacion de parte del services ya que no se tiene informacion de quien actulizo la entrega.
-
-    } catch (error) {
-        console.error(
-            "Error procesando submission.updated:",
-            error.message
-        );
-    }
+  } catch (error) {
+    console.error("Error procesando SUBMISSION_CREATED:", error.message);
+  }
 });
 
+eventBus.on("SUBMISSION_UPDATED", async (updatedSubmission) => {
+  try {
+    const teacherId = await getTaskTeacherId(updatedSubmission.taskId);
 
+    await notificationService.createNotification({
+      userId: updatedSubmission.studentId,
+      type: "submission_created",
+      title: "Entrega actualizada",
+      referenceId: updatedSubmission.id,
+      referenceType: "submission",
+      message: `Tu entrega ${updatedSubmission.id} fue actualizada.`
+    });
 
-//listener para el evento de entrega de tarea eliminada
+    if (teacherId) {
+      await notificationService.createNotification({
+        userId: teacherId,
+        type: "submission_created",
+        title: "Entrega actualizada",
+        referenceId: updatedSubmission.id,
+        referenceType: "submission",
+        message: `Una entrega de la tarea ${updatedSubmission.taskId} fue actualizada.`
+      });
+    }
+  } catch (error) {
+    console.error("Error procesando SUBMISSION_UPDATED:", error.message);
+  }
+});
 
-eventBus.on("Submissions.deleted", deletedSubmision =>{
-    console.log(`La entrega ${deletedSubmision.id} fue eliminada.`)
-})
+eventBus.on("SUBMISSION_GRADED", async (gradedSubmission) => {
+  try {
+    await notificationService.createNotification({
+      userId: gradedSubmission.studentId,
+      type: "submission_graded",
+      title: "Entrega calificada",
+      referenceId: gradedSubmission.id,
+      referenceType: "submission",
+      message: `Tu entrega ${gradedSubmission.id} fue calificada con ${gradedSubmission.grade}.`
+    });
+  } catch (error) {
+    console.error("Error procesando SUBMISSION_GRADED:", error.message);
+  }
+});
 
+eventBus.on("SUBMISSION_DELETED", async (deletedSubmission) => {
+  console.log(`La entrega ${deletedSubmission.id} fue desactivada.`);
+});
 
-
-
+eventBus.on("FILE_SCAN_REJECTED", async ({ submissionId }) => {
+  try {
+    const [rows] = await db.query(
+      "SELECT studentId FROM submissions WHERE id = ?",
+      [submissionId]
+    );
+    if (!rows[0]) return;
+    await notificationService.createNotification({
+      userId: rows[0].studentId,
+      type: "FILE_SCAN_REJECTED",
+      title: "Archivo rechazado",
+      referenceId: submissionId,
+      referenceType: "submission_file_scan",
+      message: "El archivo de tu entrega no supero la validacion automatica."
+    });
+  } catch (error) {
+    console.error("Error procesando FILE_SCAN_REJECTED:", error.message);
+  }
+});

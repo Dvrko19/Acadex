@@ -1,51 +1,36 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import { useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 
+import { useAuth } from "../hooks/useAuth";
+import { apiMessage } from "../services/api";
 import "../App.css";
 
 function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { isAuthenticated, login } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const login = async (e) => {
-    e.preventDefault();
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate("/app/dashboard", { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
+
+  const submit = async (event) => {
+    event.preventDefault();
 
     try {
       setLoading(true);
       setMessage("");
-
-      const response = await axios.post(
-        "http://localhost:4000/api/auth/login",
-        {
-          email,
-          password
-        }
-      );
-
-      console.log("Respuesta:", response.data);
-
-      const {token ,user} = response.data.data;
-
-      localStorage.setItem("token", token);
-      localStorage.setItem("user",JSON.stringify(user));
-
-      setMessage("Inicio de sesión exitoso");
-
-      navigate("/Dashboard");
+      await login({ email, password });
+      navigate(location.state?.from?.pathname || "/app/dashboard", { replace: true });
     } catch (error) {
-      console.error(error);
-
-      const errorMessage =
-        error.response?.data?.message ||
-        "No se pudo iniciar sesión";
-
-      setMessage(errorMessage);
+      setMessage(apiMessage(error, "No se pudo iniciar sesion"));
     } finally {
       setLoading(false);
     }
@@ -55,69 +40,41 @@ function Login() {
     <div className="login-container">
       <div className="left-panel">
         <div>
-          <div className="icon">🎓</div>
-
+          <div className="brand-mark">A</div>
           <h1>Acadex</h1>
-
-          <p>
-            Plataforma académica
-            <br />
-            orientada a eventos
-          </p>
+          <p>Gestion academica por roles, tareas, entregas y eventos.</p>
         </div>
       </div>
 
       <div className="right-panel">
-        <form
-          className="card"
-          onSubmit={login}
-        >
-          <h2>Iniciar sesión</h2>
+        <form className="card" onSubmit={submit}>
+          <h2>Iniciar sesion</h2>
 
-          <label htmlFor="email">
-            Email
-          </label>
-
+          <label htmlFor="email">Email</label>
           <input
             id="email"
             type="email"
             placeholder="correo@ejemplo.com"
             value={email}
-            onChange={(e) =>
-              setEmail(e.target.value)
-            }
+            onChange={(event) => setEmail(event.target.value)}
             required
           />
 
-          <label htmlFor="password">
-            Contraseña
-          </label>
-
+          <label htmlFor="password">Contrasena</label>
           <input
             id="password"
             type="password"
-            placeholder="••••••••"
+            placeholder="********"
             value={password}
-            onChange={(e) =>
-              setPassword(e.target.value)
-            }
+            onChange={(event) => setPassword(event.target.value)}
             required
           />
 
-          <button
-            type="submit"
-            disabled={loading}
-          >
-            {loading
-              ? "Iniciando sesión..."
-              : "Iniciar sesión"}
+          <button type="submit" disabled={loading}>
+            {loading ? "Iniciando sesion..." : "Iniciar sesion"}
           </button>
 
-          {message && (
-            <p className="login-message">
-              {message}
-            </p>
-          )}
+          {message && <p className="login-message">{message}</p>}
         </form>
       </div>
     </div>

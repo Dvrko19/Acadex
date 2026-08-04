@@ -1,54 +1,62 @@
-const userService = require('../services/user.service');
+const userService = require("../services/user.service");
+const { asyncHandler } = require("../helpers/errors");
+const { requireFields, toInt } = require("../helpers/validators");
 
-const createUser = async(req, res, next) => {
+const getUsers = asyncHandler(async (req, res) => {
+  const users = await userService.findAll();
+  res.status(200).json({ success: true, data: users });
+});
 
-    try {
-        const result = await userService.createUser(req.body);
+const getUserById = asyncHandler(async (req, res) => {
+  const user = await userService.findSafeById(toInt(req.params.id));
 
-        res.status(201).json({
-            success: true,
-            message: "Usuario creado correctamente",
-            data: result
-        })
-    } catch (error) {
-        next(error);
-    }
-}
+  if (!user || user.deletedAt) {
+    return res.status(404).json({
+      success: false,
+      message: "Usuario no encontrado"
+    });
+  }
 
-const updateUser = async(req, res, next) => {
+  res.status(200).json({ success: true, data: user });
+});
 
-    try {
-        const {id} = req.params;
-        const result = await userService.updateUser(id, req.body);
+const searchUsers = asyncHandler(async (req, res) => {
+  const result = await userService.searchUsers(req.query, req.user);
+  res.status(200).json({ success: true, ...result });
+});
 
-        res.status(200).json({
-            success: true,
-            message: "Usuario actualizado correctamente",
-            data: result
-        });
-    } catch (error) {
-        next(error);
-    }
-}
+const createUser = asyncHandler(async (req, res) => {
+  requireFields(req.body, ["name", "email", "role", "password"]);
 
-const deleteUser = async(req, res, next) => {
+  const result = await userService.createUser(req.body);
 
-    try {
-        const {id} = req.params;
-        const result = await userService.deleteUser(id);
+  res.status(201).json({
+    success: true,
+    message: "Usuario creado correctamente",
+    data: result
+  });
+});
 
-        res.status(200).json({
-            success: true,
-            message: "Usuario eliminado correctamente",
-            data: result
-        });
-    } catch (error) {
-        next(error);
-    }
-}
+const updateUser = asyncHandler(async (req, res) => {
+  const result = await userService.updateUser(toInt(req.params.id), req.body);
+
+  res.status(200).json({
+    success: true,
+    message: "Usuario actualizado correctamente",
+    data: result
+  });
+});
+
+const deleteUser = asyncHandler(async (req, res) => {
+  await userService.deleteUser(toInt(req.params.id));
+  res.status(204).send();
+});
 
 module.exports = {
-    createUser,
-    updateUser,
-    deleteUser
-}
+  getUsers,
+  searchUsers,
+  getUserById,
+  createUser,
+  updateUser,
+  deleteUser
+};
