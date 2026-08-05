@@ -1,498 +1,444 @@
 # Acadex
 
-Sistema web de gestión académica desarrollado como una aplicación **Full Stack**, orientada a facilitar la administración de procesos educativos mediante una plataforma moderna, escalable y organizada.
+Acadex es una plataforma educativa con paneles separados para administradores,
+profesores y estudiantes. Permite gestionar usuarios, cursos, inscripciones,
+tareas, entregas, calificaciones, eventos y notificaciones desde una SPA que
+consume una API REST protegida con JWT.
 
-Acadex permite gestionar usuarios, cursos, tareas, entregas, eventos y notificaciones mediante una arquitectura separada entre frontend y backend.
+La primera version usa una validacion simulada para las entregas. Se conservan
+las validaciones reales de tipo, MIME, firma, estructura y tamano, pero no se
+realiza un analisis antivirus. La segunda version puede activar ClamAV cambiando
+el proveedor mediante variables de entorno.
 
----
+## Funciones por rol
 
-# Descripción del proyecto
+| Rol | Funciones principales |
+| --- | --- |
+| Admin | Dashboard global, CRUD de usuarios, cursos y tareas, inscripciones, eventos, notificaciones e incidencias de archivos. |
+| Profesor | Sus cursos, tareas, entregas de sus estudiantes, calificaciones, eventos y notificaciones. |
+| Estudiante | Sus cursos, tareas pendientes, envio y reemplazo de entregas, calificaciones, eventos y notificaciones. |
 
-Acadex está construido como una aplicación web completa compuesta por:
+Los permisos se validan dos veces: el frontend oculta modulos no autorizados y
+el backend aplica autenticacion y RBAC en cada ruta protegida. El backend es la
+fuente de verdad para la autorizacion.
 
-- **Frontend:** Aplicación desarrollada con React encargada de la interfaz de usuario.
-- **Backend:** API REST desarrollada con Node.js y Express encargada de la lógica del sistema.
-- **Base de datos:** MySQL para almacenamiento persistente de información.
-- **Infraestructura:** Docker para facilitar la ejecución del proyecto en diferentes entornos.
+## Tecnologias
 
-El objetivo del sistema es centralizar procesos académicos como:
+- Frontend: React 19, React Router, Axios, Vite, Lucide y Chart.js.
+- Backend: Node.js, Express 5, CommonJS, JWT, bcrypt y Multer.
+- Base de datos: MySQL 9, mysql2, InnoDB y fechas normalizadas en UTC.
+- Archivos: almacenamiento privado local o Cloudflare R2, cuarentena y adaptadores de validacion.
+- Pruebas: Node Test Runner, Supertest, Vitest y ESLint.
 
-- Gestión de usuarios.
-- Administración de cursos.
-- Creación y entrega de tareas.
-- Registro de eventos.
-- Sistema de notificaciones.
-- Control de información académica.
+## Arquitectura
 
----
+Acadex es un monolito modular con arquitectura cliente-servidor. El frontend y
+el backend se despliegan por separado, mientras MySQL es un servicio externo.
 
-# Tecnologías utilizadas
-
-## Backend
-
-| Tecnología | Uso |
-|---|---|
-| Node.js | Entorno de ejecución del servidor |
-| Express.js | Framework para creación de API REST |
-| MySQL | Base de datos relacional |
-| MySQL2 | Conexión y consultas a MySQL |
-| JWT | Autenticación basada en tokens |
-| bcrypt | Cifrado de contraseñas |
-| dotenv | Manejo de variables de entorno |
-| CORS | Control de solicitudes externas |
-
----
-
-## Frontend
-
-| Tecnología | Uso |
-|---|---|
-| React | Construcción de interfaz |
-| Vite | Herramienta de desarrollo |
-| Tailwind CSS | Estilos y diseño |
-| Axios | Consumo de API |
-| React Router | Navegación |
-| Chart.js | Visualización de datos |
-
----
-
-## Herramientas adicionales
-
-- Git
-- GitHub
-- Docker
-- Docker Compose
-- Visual Studio Code
-
----
-
-# Arquitectura del sistema
-
-El proyecto utiliza una arquitectura basada en:
-
-## MVC + Service Layer
-
-La arquitectura fue seleccionada para mantener una separación clara entre responsabilidades, facilitar el mantenimiento y permitir que el sistema pueda crecer sin afectar módulos existentes.
-
-El flujo general es:
-
-<img width="342" height="544" alt="image" src="https://github.com/user-attachments/assets/5f6e9061-9dc2-4661-9633-8e3d4801cf95" />
-
----
-
-# ¿Por qué se seleccionó esta arquitectura?
-
-## Separación de responsabilidades
-
-Cada capa tiene una función específica:
-
-- Las rutas manejan los endpoints.
-- Los controladores manejan las solicitudes.
-- Los servicios contienen la lógica del negocio.
-- La base de datos maneja la persistencia.
-
-Esto evita mezclar lógica y facilita realizar cambios futuros.
-
----
-
-# Estructura del proyecto
-
-<img width="179" height="335" alt="image" src="https://github.com/user-attachments/assets/f04eb43b-956f-41ff-8cef-ec6590a3e163" />
-
-
----
-
-# Backend
-
-El backend funciona como una API REST.
-
-Sus responsabilidades principales son:
-
-- Procesar solicitudes del frontend.
-- Aplicar reglas del negocio.
-- Validar información.
-- Comunicarse con MySQL.
-- Gestionar autenticación.
-
----
-
-# Capas del Backend
-
-## Routes
-
-Contiene las rutas disponibles de la API.
-
-Ejemplo:
-
-```
-POST /api/auth/login
-
-GET /api/cursos
-
-GET /api/tareas
+```mermaid
+flowchart LR
+    U["Usuario"] --> SPA["React SPA"]
+    SPA -->|"HTTP + JWT"| API["Express REST API"]
+    API --> MW["Middlewares"]
+    MW --> C["Controllers"]
+    C --> S["Services"]
+    S --> DB["MySQL"]
+    S --> FS["Almacenamiento privado"]
+    S --> EB["EventBus en memoria"]
+    EB --> L["Listeners"]
+    L --> N["Notificaciones"]
+    FS --> V["Proveedor mock o ClamAV"]
 ```
 
-Las rutas reciben las solicitudes y las dirigen al controlador correspondiente.
+### Capas del backend
 
----
+1. `routes`: declara endpoints y combina middlewares.
+2. `middlewares`: autentica JWT, autoriza roles, recibe archivos y centraliza errores.
+3. `controllers`: traduce HTTP a llamadas de aplicacion y construye respuestas.
+4. `services`: contiene reglas de negocio, permisos por propiedad y consultas SQL.
+5. `listeners`: reacciona a eventos de dominio y genera notificaciones.
+6. `config`: configura el pool MySQL y UTC.
+7. `database`: contiene migraciones, fixture, verificacion y documentacion del esquema.
 
-## Controllers
+Los services acceden directamente a MySQL; actualmente no existe una capa
+Repository separada ni un ORM.
 
-Son el intermediario entre las rutas y los servicios.
+### Capas del frontend
 
-Responsabilidades:
+1. `pages` y `layouts`: composicion de rutas y panel principal.
+2. `features/dashboard`: modulos de negocio por seccion.
+3. `components`: controles reutilizables, tablas, modales y estados visuales.
+4. `services`: cliente Axios y funciones por recurso de la API.
+5. `context`: sesion y usuario autenticado.
+6. `hooks`: acceso a sesion y carga asincrona cancelable.
+7. `utils`: fechas UTC, archivos y funciones puras probadas.
 
-- Recibir datos HTTP.
-- Validar información básica.
-- Ejecutar servicios.
-- Retornar respuestas JSON.
+## Patrones utilizados
 
----
+- Arquitectura por capas: Route -> Middleware -> Controller -> Service -> MySQL.
+- Modular Monolith: una aplicacion backend, separada internamente por dominios.
+- MVC adaptado: React actua como vista; controllers y services forman la parte servidor.
+- Observer / Publish-Subscribe: `eventBus` desacopla operaciones y notificaciones.
+- Factory y Strategy: `createFileScanService` selecciona `mock`, `clamav` o `test`.
+- Adapter: almacenamiento privado y proveedores de validacion ocultan su implementacion.
+- Middleware / Chain of Responsibility: CORS, JSON, JWT, roles, upload y errores.
+- Context Provider: `AuthProvider` comparte la sesion en React.
+- Service Layer: frontend y backend encapsulan acceso HTTP y reglas de negocio.
+- Soft Delete: varias entidades usan `deletedAt` y estados en lugar de borrado fisico.
+- RBAC: permisos por `admin`, `teacher` y `student`, complementados con propiedad del recurso.
 
-## Services
+## Estructura del repositorio
 
-Contienen la lógica principal del sistema.
-
-Ejemplos:
-
-- Crear usuarios.
-- Validar credenciales.
-- Crear cursos.
-- Gestionar tareas.
-- Registrar entregas.
-- Crear notificaciones.
-
-Esta separación permite reutilizar funciones y mantener controladores pequeños.
-
----
-
-## Config
-
-Contiene configuraciones generales.
-
-Ejemplo:
-
-- Conexión con MySQL.
-- Variables de entorno.
-- Configuración del servidor.
-
----
-
-# Arquitectura orientada a eventos
-
-El proyecto incluye una estructura preparada para trabajar con eventos:
-
-```
-events/
-
-listeners/
-```
-
-Este enfoque permite que ciertas acciones del sistema puedan generar procesos automáticos.
-
-Ejemplo:
-
-```
-Estudiante entrega una tarea
-
-          ↓
-
-Se genera evento
-
-          ↓
-
-Notificación al profesor
-
-          ↓
-
-Actualización de historial
+```text
+Acadex/
+|-- backend/
+|   |-- database/
+|   |-- scripts/
+|   |-- src/
+|   |   |-- config/
+|   |   |-- controllers/
+|   |   |-- events/
+|   |   |-- helpers/
+|   |   |-- listeners/
+|   |   |-- middlewares/
+|   |   |-- routes/
+|   |   `-- services/
+|   `-- tests/
+`-- frontend/
+    `-- AcadexFrontend/
+        |-- public/
+        |-- scripts/
+        `-- src/
 ```
 
-Beneficios:
+## Requisitos
 
-- Menor acoplamiento.
-- Fácil agregar nuevas funciones.
-- Mejor escalabilidad.
+- Git.
+- Node.js `20.19+` o `22.12+`.
+- npm.
+- Acceso a MySQL 9.x o a la instancia compartida de Railway.
+- Dos terminales para ejecutar frontend y backend.
 
----
+Docker y ClamAV no son necesarios mientras `FILE_SCAN_PROVIDER=mock`.
 
-# Seguridad
+## Inicio rapido con Railway compartido
 
-El sistema implementa:
+Este es el recorrido mas corto para un integrante del equipo. Las credenciales
+de Railway y `JWT_SECRET` deben compartirse por un canal privado, nunca por Git.
 
-## Autenticación
+### 1. Clonar e instalar
 
-Uso de:
-
-- JSON Web Token (JWT).
-
-Permite identificar usuarios y proteger recursos.
-
----
-
-## Contraseñas
-
-Las contraseñas son almacenadas utilizando:
-
-- bcrypt.
-
-Esto evita guardar contraseñas directamente en la base de datos.
-
----
-
-## Variables de entorno
-
-Información sensible se maneja mediante:
-
-```
-.env
-```
-
-Ejemplo:
-
-```
-PORT=
-DATABASE_HOST=
-DATABASE_USER=
-DATABASE_PASSWORD=
-DATABASE_NAME=
-JWT_SECRET=
-```
-
----
-
-# Instalación
-
-## Clonar repositorio
-
-```bash
-git clone URL_DEL_REPOSITORIO
-
+```powershell
+git clone <URL_DEL_REPOSITORIO>
 cd Acadex
-```
 
----
-
-# Backend
-
-Entrar a backend:
-
-```bash
 cd backend
+npm ci
+Copy-Item .env.example .env
+
+cd ..\frontend\AcadexFrontend
+npm ci
+Copy-Item .env.example .env
 ```
 
-Instalar dependencias:
+### 2. Configurar el backend
 
-```bash
-npm install
+Completar `backend/.env`:
+
+```env
+DATABASE_URL=mysql://USUARIO:CONTRASENA@HOST:PUERTO/BASE
+PORT=4000
+FRONTEND_URL=http://localhost:5173,http://127.0.0.1:5173
+JWT_SECRET=un_secreto_largo_y_privado
+APP_TIMEZONE=UTC
+
+MAX_SUBMISSION_FILE_SIZE_MB=25
+FILE_STORAGE_PROVIDER=local
+PRIVATE_UPLOAD_DIRECTORY=./private-uploads
+FILE_SCAN_PROVIDER=mock
+MOCK_FILE_SCAN_RESULT=clean
+MOCK_FILE_SCAN_DELAY_MS=400
 ```
 
-Crear archivo:
+Se puede usar `DATABASE_URL` o las variables `DB_HOST`, `DB_PORT`, `DB_USER`,
+`DB_PASSWORD` y `DB_NAME`. `DATABASE_URL` tiene prioridad.
 
+### 3. Configurar el frontend
+
+`frontend/AcadexFrontend/.env`:
+
+```env
+VITE_API_URL=http://localhost:4000/api
 ```
-.env
-```
 
-Configurar variables necesarias.
+### 4. Ejecutar
 
-Ejecutar modo desarrollo:
+Terminal del backend:
 
-```bash
+```powershell
+cd backend
 npm run dev
 ```
 
-Ejecutar modo producción:
+Terminal del frontend:
 
-```bash
+```powershell
+cd frontend\AcadexFrontend
+npm run dev
+```
+
+- Frontend: `http://localhost:5173`
+- Backend: `http://localhost:4000`
+- Health check: `http://localhost:4000/health`
+
+La base compartida de Railway ya tiene su migracion aplicada. No ejecutar
+migraciones ni seeds contra Railway durante el inicio normal.
+
+### Forma recomendada de colaborar
+
+Hay dos configuraciones coherentes para el equipo:
+
+1. Aplicacion compartida: todos consumen el backend desplegado en Railway. Ese
+   backend usa la base comun y un volumen persistente para `private-uploads`.
+2. Desarrollo aislado: cada integrante ejecuta backend, base local y carpeta de
+   archivos local. Los cambios de codigo se comparten por Git, no los datos.
+
+Evitar varios backends locales conectados a una misma base Railway para probar
+entregas. MySQL compartiria `storage_key`, pero el archivo fisico solo existiria
+en la computadora que lo recibio; los demas backends responderian archivo no
+encontrado. Los CRUD sin archivos no tienen esa limitacion.
+
+## Despliegue gratuito
+
+La configuracion de produccion separa cada responsabilidad:
+
+- Frontend React en Cloudflare Pages.
+- Backend Express en Render.
+- MySQL existente en Railway.
+- Entregas privadas en Cloudflare R2.
+
+Render usa estas variables adicionales:
+
+```env
+NODE_ENV=production
+FILE_STORAGE_PROVIDER=r2
+R2_ACCOUNT_ID=
+R2_ACCESS_KEY_ID=
+R2_SECRET_ACCESS_KEY=
+R2_BUCKET=acadex-private
+R2_ENDPOINT=https://ACCOUNT_ID.r2.cloudflarestorage.com
+API_RATE_LIMIT=600
+LOGIN_RATE_LIMIT=10
+```
+
+El bucket permanece privado y el token se limita a lectura y escritura de
+objetos en ese bucket. El navegador descarga mediante el endpoint autorizado
+del backend y nunca recibe las credenciales de R2.
+
+Los archivos existentes se migran una sola vez desde la computadora que los
+conserva. El comando mantiene las claves `clean/UUID.pdf`, omite los objetos ya
+existentes y no elimina la copia local:
+
+```powershell
+cd backend
+$env:FILE_STORAGE_PROVIDER="r2"
+npm run storage:migrate:r2
+```
+
+No se ejecutan seeds ni migraciones de esquema como parte del inicio de Render.
+
+## Base local desde cero
+
+Usar esta opcion para desarrollo aislado. El fixture solo debe importarse en
+una base local desechable.
+
+```powershell
+mysql --host=127.0.0.1 --port=3306 --user=root `
+  --execute="CREATE DATABASE acadex_local CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci"
+
+Get-Content -Raw backend/database/tests/fixtures/railway-schema-before-20260801.sql |
+  mysql --host=127.0.0.1 --port=3306 --user=root --database=acadex_local
+```
+
+Configurar `backend/.env` para `acadex_local` y ejecutar:
+
+```powershell
+cd backend
+npm run migrate:school
+npm run seed
 npm start
 ```
 
----
+El seed es solo para desarrollo local. Es idempotente para sus entidades
+conocidas, pero vuelve a establecer las contrasenas de demostracion.
 
-# Frontend
+### Usuarios locales del seed
 
-Entrar al frontend:
+| Rol | Correo | Contrasena |
+| --- | --- | --- |
+| Admin | `admin@acadex.local` | `Acadex.Admin.2026` |
+| Profesor | `carlos.gomez@acadex.local` | `Acadex.Teacher.2026` |
+| Profesor | `laura.martinez@acadex.local` | `Acadex.Teacher.2026` |
+| Estudiante | `ana.rodriguez@acadex.local` | `Acadex.Student.2026` |
 
-```bash
-cd frontend/AcadexFrontend
+Las contrasenas pueden reemplazarse con `SEED_ADMIN_PASSWORD`,
+`SEED_TEACHER_PASSWORD` y `SEED_STUDENT_PASSWORD`. El correo admin puede
+reemplazarse con `SEED_ADMIN_EMAIL`.
+
+## Validacion de entregas
+
+Antes del proveedor, Acadex rechaza extensiones dobles, MIME incorrecto,
+firmas invalidas, ejecutables renombrados, PPTX con macros o cifrado y archivos
+que superen el limite.
+
+Primera version:
+
+```env
+FILE_SCAN_PROVIDER=mock
+MOCK_FILE_SCAN_RESULT=clean
+MOCK_FILE_SCAN_DELAY_MS=400
 ```
 
-Instalar dependencias:
+`MOCK_FILE_SCAN_RESULT` admite:
 
-```bash
-npm install
+- `clean`: valida y habilita el archivo.
+- `infected`: simula rechazo y elimina el archivo en cuarentena.
+- `failed`: simula indisponibilidad y conserva el archivo aislado.
+
+Segunda version:
+
+```env
+FILE_SCAN_PROVIDER=clamav
+CLAMAV_HOST=127.0.0.1
+CLAMAV_PORT=3310
+CLAMAV_TIMEOUT_MS=30000
 ```
 
-Ejecutar:
+La interfaz usa el termino `Archivo validado` porque el modo mock no representa
+proteccion antivirus real.
 
-```bash
+## EventBus
+
+`backend/src/events/eventBus.js` exporta una instancia unica de Node
+`EventEmitter`. Los services emiten eventos despues de operaciones de negocio y
+los listeners registrados al arrancar el backend crean notificaciones o logs.
+
+Eventos actuales:
+
+- Usuarios: `USER_CREATED`, `USER_UPDATED`, `USER_DEACTIVATED`.
+- Cursos: `COURSE_CREATED`, `COURSE_UPDATED`, `COURSE_DEACTIVATED`.
+- Inscripciones: `COURSE_ENROLLMENT_CREATED`, `COURSE_ENROLLMENT_DEACTIVATED`.
+- Tareas: `TASK_CREATED`, `TASK_UPDATED`, `TASK_DELETED`.
+- Entregas: `SUBMISSION_CREATED`, `SUBMISSION_UPDATED`, `SUBMISSION_GRADED`, `SUBMISSION_DELETED`.
+- Archivos: `FILE_SCAN_REJECTED`.
+- Eventos academicos: `EVENT_CREATED`.
+
+Es un bus interno, sin persistencia. `EventEmitter` tampoco espera la finalizacion
+de listeners asincronos. Es apropiado para este monolito y notificaciones no
+criticas, pero no garantiza reintentos si el proceso cae. Una version distribuida
+deberia migrar esas reacciones a Outbox + cola, por ejemplo RabbitMQ o Redis.
+
+## Modelo de datos
+
+Entidades principales:
+
+- `users`: identidad, rol, estado y datos personales.
+- `student_profiles` y `teacher_profiles`: informacion especifica por rol.
+- `courses`: curso y profesor asignado.
+- `courseStudents`: relacion muchos-a-muchos entre cursos y estudiantes.
+- `tasks`: actividades, fecha UTC y puntuacion maxima.
+- `submissions`: entrega, archivo, estado academico, nota y feedback.
+- `events`: actividades generales o asociadas a cursos.
+- `notifications`: notificaciones personales y estado de lectura.
+
+La calificacion vive en `submissions`; no existe una tabla `grades` separada.
+MySQL tambien aplica claves foraneas, indices, checks y triggers de integridad.
+
+## API principal
+
+Todas las rutas, excepto login y health, requieren `Authorization: Bearer TOKEN`.
+
+| Grupo | Base | Acceso general |
+| --- | --- | --- |
+| Autenticacion | `/api/auth` | Publico para login |
+| Dashboard | `/api/dashboard` | Todos los roles, datos filtrados |
+| Usuarios | `/api/users` | CRUD admin; busqueda admin/profesor |
+| Cursos | `/api/courses` | Lectura filtrada; CRUD e inscripcion admin |
+| Tareas | `/api/tasks` | Lectura filtrada; escritura admin/profesor |
+| Entregas | `/api/submissions` | Envio estudiante; revision profesor/admin |
+| Eventos | `/api/events` | Lectura por rol; escritura admin/profesor |
+| Notificaciones | `/api/notifications` | Solo recursos del usuario autenticado |
+
+## Scripts
+
+Backend:
+
+```powershell
+npm start                 # produccion local
+npm run dev               # desarrollo con nodemon
+npm test                  # pruebas unitarias
+npm run test:integration  # integracion con MySQL local preparado
+npm run test:smoke        # smoke tests contra la API y datos seed
+npm run migrate:school    # migracion incremental
+npm run seed              # datos locales de demostracion
+```
+
+Frontend:
+
+```powershell
 npm run dev
+npm run lint
+npm test
+npm run build
+npm run preview
 ```
 
----
+## Antes de hacer commit
 
-# Docker
+```powershell
+cd backend
+npm test
 
-El proyecto incluye configuración Docker para facilitar el despliegue.
+cd ..\frontend\AcadexFrontend
+npm run lint
+npm test
+npm run build
 
-Ejecutar:
-
-```bash
-docker compose up
+cd ..\..
+git diff --check
+git status --short
 ```
 
-Detener servicios:
+Confirmar que no aparezcan `.env`, `private-uploads`, `node_modules` ni `dist`.
+Los archivos nuevos deben agregarse con `git add`; un archivo marcado con `??`
+no se incluye en el commit automaticamente.
 
-```bash
-docker compose down
+Para incluir la version completa auditada:
+
+```powershell
+git add -A
+git status --short
+git commit -m "feat: integra Acadex por roles y documenta la arquitectura"
 ```
 
----
+No usar solamente `git commit -am`: ese comando omite todos los archivos que
+todavia aparecen como `??`.
 
-# Endpoints principales
+## Limitaciones actuales
 
-## Autenticación
+- El proveedor mock no detecta malware.
+- El almacenamiento local es solo para desarrollo; produccion usa R2 privado.
+- EventBus funciona solo dentro de una instancia y no conserva eventos.
+- JWT se guarda en `localStorage`; una version posterior puede migrar a cookies
+  HttpOnly con proteccion CSRF.
+- Las consultas SQL viven en services; un crecimiento grande puede justificar
+  repositories y transacciones de aplicacion mas explicitas.
 
-```
-POST /api/auth/login
-```
+La documentacion detallada del backend y la base se encuentra en
+`backend/BACKEND.md` y `backend/database/README.md`.
 
----
+## Autores
 
-## Usuarios
-
-```
-GET /api/users
-
-POST /api/users
-
-PUT /api/users/:id
-
-DELETE /api/users/:id
-```
-
----
-
-## Cursos
-
-```
-GET /api/cursos
-
-POST /api/cursos
-
-PUT /api/cursos/:id
-
-DELETE /api/cursos/:id
-```
-
----
-
-## Tareas
-
-```
-GET /api/tareas
-
-POST /api/tareas
-
-PUT /api/tareas/:id
-
-DELETE /api/tareas/:id
-```
-
----
-
-## Entregas
-
-```
-GET /api/entregas
-
-POST /api/entregas
-```
-
----
-
-## Eventos
-
-```
-GET /api/eventos
-```
-
----
-
-## Notificaciones
-
-```
-GET /api/notificaciones
-
-PUT /api/notificaciones/:id/read
-```
-
----
-
-# Estado actual
-
-Actualmente el proyecto cuenta con:
-
-✅ Arquitectura organizada  
-✅ Backend separado por capas  
-✅ Autenticación preparada  
-✅ Conexión con base de datos  
-✅ Frontend React configurado  
-✅ Sistema preparado para eventos  
-✅ Docker configurado  
-
----
-
-## Sistema
-
-- Roles y permisos avanzados.
-- Notificaciones en tiempo real.
-- Dashboard administrativo.
-- Estadísticas.
-
----
-
-## Calidad
-
-- Pruebas automatizadas.
-- Documentación API.
-- Mejoras de seguridad.
-- CI/CD.
-
----
-
-# Organización de ramas
-
-El desarrollo utiliza ramas separadas por funcionalidad:
-
-```
-main
-
-├── f-service
-
-├── f-controller
-
-└── f-routes
-```
-
-Cada rama contiene una parte específica del desarrollo.
-
-Ejemplo:
-
-- `f-service` → lógica del negocio.
-- `f-controller` → controladores.
-- `f-routes` → endpoints de la API.
-
----
-
-# Licencia
-
-Proyecto desarrollado con fines educativos.
-
----
-
-# Autor
-
-Wander Castillo/n
-Ramshley Polanco/n
-Derik Manuel Infante
+- Wander Castillo
+- Ramshley Polanco
+- Derik Manuel Infante

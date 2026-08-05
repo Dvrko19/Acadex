@@ -24,3 +24,14 @@ dist-ssr
 *.sw?
 
 .env
+.env.*
+!.env.example
+
+# Local database exports and credentials
+*.bak
+*.backup
+*.dump
+database/backups/
+
+# Private academic submissions. Never expose or commit this directory.
+private-uploads/
