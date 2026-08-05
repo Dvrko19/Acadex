@@ -198,15 +198,15 @@ migraciones ni seeds contra Railway durante el inicio normal.
 
 Hay dos configuraciones coherentes para el equipo:
 
-1. Aplicacion compartida: todos consumen el backend desplegado en Railway. Ese
-   backend usa la base comun y un volumen persistente para `private-uploads`.
+1. Aplicacion compartida: todos consumen el backend desplegado en Render. Ese
+   backend usa la base MySQL de Railway y el bucket privado de Backblaze B2.
 2. Desarrollo aislado: cada integrante ejecuta backend, base local y carpeta de
    archivos local. Los cambios de codigo se comparten por Git, no los datos.
 
-Evitar varios backends locales conectados a una misma base Railway para probar
-entregas. MySQL compartiria `storage_key`, pero el archivo fisico solo existiria
-en la computadora que lo recibio; los demas backends responderian archivo no
-encontrado. Los CRUD sin archivos no tienen esa limitacion.
+Evitar varios backends locales con `FILE_STORAGE_PROVIDER=local` conectados a
+una misma base Railway para probar entregas. MySQL compartiria `storage_key`,
+pero el archivo fisico solo existiria en la computadora que lo recibio. El
+backend desplegado usa B2 y no tiene esa limitacion.
 
 ## Despliegue gratuito
 
@@ -216,6 +216,27 @@ La configuracion de produccion separa cada responsabilidad:
 - Backend Express en Render.
 - MySQL existente en Railway.
 - Entregas privadas en Backblaze B2.
+
+Servicios publicados:
+
+- Frontend: `https://acadex-frontend.pages.dev`
+- Backend: `https://acadex-backend-jzev.onrender.com`
+- Salud del backend: `https://acadex-backend-jzev.onrender.com/health`
+
+El frontend se compila con la URL publica del backend y se despliega desde
+`frontend/AcadexFrontend`:
+
+```powershell
+$env:VITE_API_URL="https://acadex-backend-jzev.onrender.com/api"
+npm run build
+npx wrangler pages deploy dist --project-name acadex-frontend --branch main
+```
+
+Wrangler requiere `CLOUDFLARE_API_TOKEN` y `CLOUDFLARE_ACCOUNT_ID` solo en el
+entorno local o de CI. Nunca deben guardarse en `.env` versionados, comandos de
+Git ni archivos del repositorio. La integracion automatica con GitHub debe
+configurarse desde la cuenta propietaria del repositorio; hasta entonces el
+despliegue directo anterior es la opcion con menor alcance de permisos.
 
 Render usa estas variables adicionales:
 
@@ -246,6 +267,7 @@ npm run storage:migrate:s3
 ```
 
 No se ejecutan seeds ni migraciones de esquema como parte del inicio de Render.
+La migracion inicial de archivos privados a B2 ya fue aplicada y verificada.
 
 ## Base local desde cero
 
