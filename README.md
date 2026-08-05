@@ -27,7 +27,7 @@ fuente de verdad para la autorizacion.
 - Frontend: React 19, React Router, Axios, Vite, Lucide y Chart.js.
 - Backend: Node.js, Express 5, CommonJS, JWT, bcrypt y Multer.
 - Base de datos: MySQL 9, mysql2, InnoDB y fechas normalizadas en UTC.
-- Archivos: almacenamiento privado local o Cloudflare R2, cuarentena y adaptadores de validacion.
+- Archivos: almacenamiento privado local o S3 compatible, cuarentena y adaptadores de validacion.
 - Pruebas: Node Test Runner, Supertest, Vitest y ESLint.
 
 ## Arquitectura
@@ -215,25 +215,25 @@ La configuracion de produccion separa cada responsabilidad:
 - Frontend React en Cloudflare Pages.
 - Backend Express en Render.
 - MySQL existente en Railway.
-- Entregas privadas en Cloudflare R2.
+- Entregas privadas en Backblaze B2.
 
 Render usa estas variables adicionales:
 
 ```env
 NODE_ENV=production
-FILE_STORAGE_PROVIDER=r2
-R2_ACCOUNT_ID=
-R2_ACCESS_KEY_ID=
-R2_SECRET_ACCESS_KEY=
-R2_BUCKET=acadex-private
-R2_ENDPOINT=https://ACCOUNT_ID.r2.cloudflarestorage.com
+FILE_STORAGE_PROVIDER=s3
+S3_ACCESS_KEY_ID=
+S3_SECRET_ACCESS_KEY=
+S3_BUCKET=acadex-private
+S3_ENDPOINT=https://s3.REGION.backblazeb2.com
+S3_REGION=REGION
 API_RATE_LIMIT=600
 LOGIN_RATE_LIMIT=10
 ```
 
 El bucket permanece privado y el token se limita a lectura y escritura de
 objetos en ese bucket. El navegador descarga mediante el endpoint autorizado
-del backend y nunca recibe las credenciales de R2.
+del backend y nunca recibe las credenciales de B2.
 
 Los archivos existentes se migran una sola vez desde la computadora que los
 conserva. El comando mantiene las claves `clean/UUID.pdf`, omite los objetos ya
@@ -241,8 +241,8 @@ existentes y no elimina la copia local:
 
 ```powershell
 cd backend
-$env:FILE_STORAGE_PROVIDER="r2"
-npm run storage:migrate:r2
+$env:FILE_STORAGE_PROVIDER="s3"
+npm run storage:migrate:s3
 ```
 
 No se ejecutan seeds ni migraciones de esquema como parte del inicio de Render.
@@ -427,7 +427,7 @@ todavia aparecen como `??`.
 ## Limitaciones actuales
 
 - El proveedor mock no detecta malware.
-- El almacenamiento local es solo para desarrollo; produccion usa R2 privado.
+- El almacenamiento local es solo para desarrollo; produccion usa B2 privado.
 - EventBus funciona solo dentro de una instancia y no conserva eventos.
 - JWT se guarda en `localStorage`; una version posterior puede migrar a cookies
   HttpOnly con proteccion CSRF.

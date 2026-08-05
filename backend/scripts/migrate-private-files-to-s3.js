@@ -16,8 +16,8 @@ const mimeTypes = {
 };
 
 const migrate = async () => {
-  if (storageService.provider !== "r2") {
-    throw new Error("Configura FILE_STORAGE_PROVIDER=r2 antes de ejecutar la migracion");
+  if (storageService.provider !== "s3") {
+    throw new Error("Configura FILE_STORAGE_PROVIDER=s3 antes de ejecutar la migracion");
   }
 
   let uploaded = 0;

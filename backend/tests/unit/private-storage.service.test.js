@@ -7,7 +7,7 @@ const { Readable } = require("stream");
 
 const {
   PrivateStorageService,
-  R2PrivateStorageService,
+  S3PrivateStorageService,
   normalizeStorageKey
 } = require("../../src/services/private-storage.service");
 
@@ -37,8 +37,8 @@ test("local private storage promotes and reads a quarantined file", async () => 
   }
 });
 
-test("R2 private storage keeps objects private behind its adapter", async () => {
-  const root = await fs.promises.mkdtemp(path.join(os.tmpdir(), "acadex-r2-storage-"));
+test("S3 private storage keeps objects private behind its adapter", async () => {
+  const root = await fs.promises.mkdtemp(path.join(os.tmpdir(), "acadex-s3-storage-"));
   const objects = new Map();
   const client = {
     async send(command) {
@@ -65,10 +65,11 @@ test("R2 private storage keeps objects private behind its adapter", async () => 
       throw new Error(`Unexpected command: ${command.constructor.name}`);
     }
   };
-  const storage = new R2PrivateStorageService({
+  const storage = new S3PrivateStorageService({
     rootDirectory: root,
     bucket: "acadex-test",
-    endpoint: "https://r2.test.invalid",
+    endpoint: "https://s3.test.invalid",
+    region: "test-region-1",
     accessKeyId: "test-access-key",
     secretAccessKey: "test-secret-key",
     client
@@ -77,7 +78,7 @@ test("R2 private storage keeps objects private behind its adapter", async () => 
   const filePath = path.join(storage.quarantineDirectory, fileName);
 
   try {
-    await fs.promises.writeFile(filePath, "r2-private-content");
+    await fs.promises.writeFile(filePath, "s3-private-content");
     await storage.storeQuarantine(filePath, fileName, "application/pdf");
     const cleanKey = await storage.promote(fileName, {
       filePath,
@@ -87,7 +88,7 @@ test("R2 private storage keeps objects private behind its adapter", async () => 
 
     assert.equal(objects.has(`quarantine/${fileName}`), false);
     assert.equal(await storage.exists(cleanKey), true);
-    assert.equal((await readStream(await storage.createReadStream(cleanKey))).toString(), "r2-private-content");
+    assert.equal((await readStream(await storage.createReadStream(cleanKey))).toString(), "s3-private-content");
     assert.equal(fs.existsSync(filePath), false);
   } finally {
     await fs.promises.rm(root, { recursive: true, force: true });

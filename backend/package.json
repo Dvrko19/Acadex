@@ -12,7 +12,7 @@
     "test:smoke": "node scripts/backend-smoke-tests.js",
     "migrate:school": "node scripts/apply-school-migration.js",
     "seed": "node scripts/seed-acadex-db.js",
-    "storage:migrate:r2": "node scripts/migrate-private-files-to-r2.js"
+    "storage:migrate:s3": "node scripts/migrate-private-files-to-s3.js"
   },
   "keywords": [],
   "author": "",

@@ -22,11 +22,11 @@ FRONTEND_URL=http://localhost:5173
 MAX_SUBMISSION_FILE_SIZE_MB=25
 FILE_STORAGE_PROVIDER=local
 PRIVATE_UPLOAD_DIRECTORY=./private-uploads
-R2_ACCOUNT_ID=
-R2_ACCESS_KEY_ID=
-R2_SECRET_ACCESS_KEY=
-R2_BUCKET=
-R2_ENDPOINT=
+S3_ACCESS_KEY_ID=
+S3_SECRET_ACCESS_KEY=
+S3_BUCKET=
+S3_ENDPOINT=
+S3_REGION=
 API_RATE_LIMIT=600
 LOGIN_RATE_LIMIT=10
 FILE_SCAN_PROVIDER=mock
@@ -40,7 +40,7 @@ CLAMAV_TIMEOUT_MS=30000
 `DATABASE_URL` tiene prioridad sobre las variables `DB_*`. `APP_TIMEZONE` debe
 ser `UTC`. La carpeta privada se usa en desarrollo y no debe estar dentro de
 `public` ni servirse de forma estatica. En produccion,
-`FILE_STORAGE_PROVIDER=r2` mantiene los objetos en un bucket privado y usa el
+`FILE_STORAGE_PROVIDER=s3` mantiene los objetos en un bucket privado y usa el
 disco de Render solo como cuarentena temporal durante la validacion.
 
 ## Endpoints principales
@@ -129,7 +129,7 @@ No ejecutar seeds en Railway.
 ## Pendientes de infraestructura
 
 - Sustituir el proveedor `mock` por ClamAV real en la segunda version.
-- Configurar el adaptador R2 y ejecutar `npm run storage:migrate:r2` una sola vez
+- Configurar el adaptador S3 y ejecutar `npm run storage:migrate:s3` una sola vez
   para documentos locales preexistentes.
 - Definir una politica programada de retencion y limpieza de cuarentena.
 - Agregar versionado en base de datos si en el futuro se requiere conservar el
