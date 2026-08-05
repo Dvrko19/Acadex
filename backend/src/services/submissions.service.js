@@ -234,11 +234,14 @@ const scanSubmission = async (submissionId, file, previousStorageKey = null) => 
   try {
     const scan = await fileScanService.scanFile(file.path);
     if (scan.status === "infected") {
-      await storageService.removeAbsolute(file.path);
+      await storageService.remove(storageService.quarantineKey(file.filename));
       await updateScanStatus(submissionId, "infected", scan.result || "Archivo rechazado por la validacion automatica");
       eventBus.emit("FILE_SCAN_REJECTED", { submissionId });
     } else {
-      const cleanStorageKey = await storageService.promote(file.filename);
+      const cleanStorageKey = await storageService.promote(file.filename, {
+        filePath: file.path,
+        mimeType: file.acadexDeclaredType?.mimeType
+      });
       await updateScanStatus(submissionId, "clean", null, cleanStorageKey);
     }
   } catch (error) {
@@ -247,6 +250,13 @@ const scanSubmission = async (submissionId, file, previousStorageKey = null) => 
       message: error.message
     });
     await updateScanStatus(submissionId, "scan_failed", "Analisis no disponible");
+  } finally {
+    await storageService.discardTemporary(file.path).catch((error) => {
+      console.error("No se pudo eliminar el archivo temporal", {
+        submissionId,
+        message: error.message
+      });
+    });
   }
 
   if (previousStorageKey) {
@@ -258,8 +268,13 @@ const scanSubmission = async (submissionId, file, previousStorageKey = null) => 
 
 const buildFileMetadata = async (file) => {
   const validated = await validateStoredFile(file);
+  const storageKey = await storageService.storeQuarantine(
+    file.path,
+    file.filename,
+    validated.mimeType
+  );
   return {
-    storageKey: storageService.quarantineKey(file.filename),
+    storageKey,
     originalFileName: file.originalname,
     storedFileName: file.filename,
     fileExtension: validated.extension,
@@ -271,6 +286,7 @@ const buildFileMetadata = async (file) => {
 
 const createSubmission = async ({ taskId, studentId, file }) => {
   let submissionId;
+  let metadata;
   try {
     const task = await assertStudentCanSubmitTask({ taskId, studentId });
     if (await findStudentSubmissionForTask({ taskId, studentId })) {
@@ -281,7 +297,7 @@ const createSubmission = async ({ taskId, studentId, file }) => {
       );
     }
 
-    const metadata = await buildFileMetadata(file);
+    metadata = await buildFileMetadata(file);
     const status = Date.now() > new Date(task.dueDate).getTime() ? "late" : "submitted";
     const [result] = await db.query(
       `
@@ -314,6 +330,9 @@ const createSubmission = async ({ taskId, studentId, file }) => {
     eventBus.emit("SUBMISSION_CREATED", submission);
     return submission;
   } catch (error) {
+    if (!submissionId && metadata?.storageKey) {
+      await storageService.remove(metadata.storageKey).catch(() => {});
+    }
     if (!submissionId && file?.path) {
       await storageService.removeAbsolute(file.path).catch(() => {});
     }
@@ -339,8 +358,10 @@ const replaceSubmission = async (id, { file }, user) => {
     );
   }
 
+  let metadata;
+  let scanStarted = false;
   try {
-    const metadata = await buildFileMetadata(file);
+    metadata = await buildFileMetadata(file);
     const status = Date.now() > new Date(current.dueDate).getTime() ? "late" : "submitted";
     await db.query(
       `
@@ -364,10 +385,14 @@ const replaceSubmission = async (id, { file }, user) => {
       ]
     );
 
+    scanStarted = true;
     const submission = await scanSubmission(id, file, current.storageKey);
     eventBus.emit("SUBMISSION_UPDATED", submission);
     return submission;
   } catch (error) {
+    if (!scanStarted && metadata?.storageKey) {
+      await storageService.remove(metadata.storageKey).catch(() => {});
+    }
     if (file?.path) await storageService.removeAbsolute(file.path).catch(() => {});
     throw error;
   }
@@ -404,7 +429,7 @@ const getSubmissionFile = async (submissionId, user) => {
   }
 
   return {
-    stream: storageService.createReadStream(submission.storageKey),
+    stream: await storageService.createReadStream(submission.storageKey),
     mimeType: submission.mimeType,
     fileExtension: submission.fileExtension,
     originalFileName: submission.originalFileName

@@ -2,6 +2,8 @@ require("dotenv").config();
 
 const express = require("express");
 const cors = require("cors");
+const helmet = require("helmet");
+const { rateLimit } = require("express-rate-limit");
 const apiRoutes = require("./src/routes");
 const db = require("./src/config/db");
 const { AppError } = require("./src/helpers/errors");
@@ -15,6 +17,8 @@ require("./src/listeners/events.listener");
 
 const app = express();
 app.disable("x-powered-by");
+if (process.env.NODE_ENV === "production") app.set("trust proxy", 1);
+app.use(helmet({ crossOriginResourcePolicy: false }));
 
 const allowedOrigins = [
   "http://localhost:5173",
@@ -36,6 +40,19 @@ app.use(
     }
   })
 );
+app.use(rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: Number(process.env.API_RATE_LIMIT || 600),
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+  handler(req, res) {
+    return res.status(429).json({
+      success: false,
+      message: "Demasiadas solicitudes. Intenta nuevamente en unos minutos.",
+      code: "RATE_LIMIT_EXCEEDED"
+    });
+  }
+}));
 app.use(express.json({ limit: "1mb" }));
 
 app.set("port", process.env.PORT || 4000);

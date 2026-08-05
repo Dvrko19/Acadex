@@ -20,7 +20,15 @@ PORT=4000
 FRONTEND_URL=http://localhost:5173
 
 MAX_SUBMISSION_FILE_SIZE_MB=25
+FILE_STORAGE_PROVIDER=local
 PRIVATE_UPLOAD_DIRECTORY=./private-uploads
+R2_ACCOUNT_ID=
+R2_ACCESS_KEY_ID=
+R2_SECRET_ACCESS_KEY=
+R2_BUCKET=
+R2_ENDPOINT=
+API_RATE_LIMIT=600
+LOGIN_RATE_LIMIT=10
 FILE_SCAN_PROVIDER=mock
 MOCK_FILE_SCAN_RESULT=clean
 MOCK_FILE_SCAN_DELAY_MS=400
@@ -30,8 +38,10 @@ CLAMAV_TIMEOUT_MS=30000
 ```
 
 `DATABASE_URL` tiene prioridad sobre las variables `DB_*`. `APP_TIMEZONE` debe
-ser `UTC`. La carpeta privada debe ser persistente en desarrollo y no debe
-estar dentro de `public` ni servirse de forma estatica.
+ser `UTC`. La carpeta privada se usa en desarrollo y no debe estar dentro de
+`public` ni servirse de forma estatica. En produccion,
+`FILE_STORAGE_PROVIDER=r2` mantiene los objetos en un bucket privado y usa el
+disco de Render solo como cuarentena temporal durante la validacion.
 
 ## Endpoints principales
 
@@ -119,8 +129,8 @@ No ejecutar seeds en Railway.
 ## Pendientes de infraestructura
 
 - Sustituir el proveedor `mock` por ClamAV real en la segunda version.
-- Implementar un adaptador de almacenamiento privado de objetos para Railway;
-  la implementacion actual es almacenamiento local privado.
+- Configurar el adaptador R2 y ejecutar `npm run storage:migrate:r2` una sola vez
+  para documentos locales preexistentes.
 - Definir una politica programada de retencion y limpieza de cuarentena.
 - Agregar versionado en base de datos si en el futuro se requiere conservar el
   historial completo de cada reemplazo.

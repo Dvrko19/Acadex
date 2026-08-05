@@ -27,7 +27,7 @@ fuente de verdad para la autorizacion.
 - Frontend: React 19, React Router, Axios, Vite, Lucide y Chart.js.
 - Backend: Node.js, Express 5, CommonJS, JWT, bcrypt y Multer.
 - Base de datos: MySQL 9, mysql2, InnoDB y fechas normalizadas en UTC.
-- Archivos: almacenamiento privado local, cuarentena y adaptadores de validacion.
+- Archivos: almacenamiento privado local o Cloudflare R2, cuarentena y adaptadores de validacion.
 - Pruebas: Node Test Runner, Supertest, Vitest y ESLint.
 
 ## Arquitectura
@@ -153,6 +153,7 @@ JWT_SECRET=un_secreto_largo_y_privado
 APP_TIMEZONE=UTC
 
 MAX_SUBMISSION_FILE_SIZE_MB=25
+FILE_STORAGE_PROVIDER=local
 PRIVATE_UPLOAD_DIRECTORY=./private-uploads
 FILE_SCAN_PROVIDER=mock
 MOCK_FILE_SCAN_RESULT=clean
@@ -206,6 +207,45 @@ Evitar varios backends locales conectados a una misma base Railway para probar
 entregas. MySQL compartiria `storage_key`, pero el archivo fisico solo existiria
 en la computadora que lo recibio; los demas backends responderian archivo no
 encontrado. Los CRUD sin archivos no tienen esa limitacion.
+
+## Despliegue gratuito
+
+La configuracion de produccion separa cada responsabilidad:
+
+- Frontend React en Cloudflare Pages.
+- Backend Express en Render.
+- MySQL existente en Railway.
+- Entregas privadas en Cloudflare R2.
+
+Render usa estas variables adicionales:
+
+```env
+NODE_ENV=production
+FILE_STORAGE_PROVIDER=r2
+R2_ACCOUNT_ID=
+R2_ACCESS_KEY_ID=
+R2_SECRET_ACCESS_KEY=
+R2_BUCKET=acadex-private
+R2_ENDPOINT=https://ACCOUNT_ID.r2.cloudflarestorage.com
+API_RATE_LIMIT=600
+LOGIN_RATE_LIMIT=10
+```
+
+El bucket permanece privado y el token se limita a lectura y escritura de
+objetos en ese bucket. El navegador descarga mediante el endpoint autorizado
+del backend y nunca recibe las credenciales de R2.
+
+Los archivos existentes se migran una sola vez desde la computadora que los
+conserva. El comando mantiene las claves `clean/UUID.pdf`, omite los objetos ya
+existentes y no elimina la copia local:
+
+```powershell
+cd backend
+$env:FILE_STORAGE_PROVIDER="r2"
+npm run storage:migrate:r2
+```
+
+No se ejecutan seeds ni migraciones de esquema como parte del inicio de Render.
 
 ## Base local desde cero
 
@@ -387,7 +427,7 @@ todavia aparecen como `??`.
 ## Limitaciones actuales
 
 - El proveedor mock no detecta malware.
-- El almacenamiento local necesita un volumen persistente al desplegar.
+- El almacenamiento local es solo para desarrollo; produccion usa R2 privado.
 - EventBus funciona solo dentro de una instancia y no conserva eventos.
 - JWT se guarda en `localStorage`; una version posterior puede migrar a cookies
   HttpOnly con proteccion CSRF.
